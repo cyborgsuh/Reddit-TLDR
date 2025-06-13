@@ -135,7 +135,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
           aria-label="Select Gemini model"
         >
           <div className="flex items-center space-x-3">
-            <SelectedIcon className={`h-5 w-5 ${getPerformanceColor(selectedModelData.performance)}`} />
+            <SelectedIcon className={`h-4 w-4 ${getPerformanceColor(selectedModelData.performance)}`} />
             <div className="text-left">
               <div className="text-sm font-medium text-gray-900 dark:text-white">
                 {selectedModelData.displayName}
@@ -157,7 +157,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Choose based on your performance needs and rate limits</p>
             </div>
             
-            <div className="p-2 space-y-2">
+            <div className="p-2 space-y-1">
               {GEMINI_MODELS.map((model) => {
                 const Icon = getPerformanceIcon(model.performance);
                 const isSelected = model.id === selectedModel;
@@ -166,75 +166,78 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                   <button
                     key={model.id}
                     onClick={() => handleModelSelect(model.id)}
-                    className={`w-full text-left p-4 rounded-lg transition-all duration-200 ${
+                    className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
                       isSelected 
-                        ? 'bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-700' 
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-transparent'
+                        ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700' 
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 border border-transparent'
                     }`}
                   >
-                    <div className="flex items-start space-x-3">
-                      <Icon className={`h-5 w-5 mt-1 flex-shrink-0 ${getPerformanceColor(model.performance)}`} />
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className={`text-sm font-semibold ${
-                            isSelected ? 'text-orange-900 dark:text-orange-100' : 'text-gray-900 dark:text-white'
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <Icon className={`h-4 w-4 flex-shrink-0 ${getPerformanceColor(model.performance)}`} />
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h4 className={`text-sm font-semibold truncate ${
+                              isSelected ? 'text-orange-900 dark:text-orange-100' : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {model.displayName}
+                            </h4>
+                            {isSelected && (
+                              <div className="flex-shrink-0 w-2 h-2 bg-orange-500 rounded-full"></div>
+                            )}
+                          </div>
+                          
+                          <p className={`text-xs leading-relaxed ${
+                            isSelected ? 'text-orange-700 dark:text-orange-300' : 'text-gray-600 dark:text-gray-400'
                           }`}>
-                            {model.displayName}
-                          </h4>
-                          {isSelected && (
-                            <div className="flex-shrink-0 w-2 h-2 bg-orange-500 rounded-full"></div>
-                          )}
+                            {model.description}
+                          </p>
                         </div>
-                        
-                        <p className={`text-xs mb-3 leading-relaxed ${
-                          isSelected ? 'text-orange-700 dark:text-orange-300' : 'text-gray-600 dark:text-gray-400'
+                      </div>
+                      
+                      {/* Rate limits on the right side */}
+                      <div className="flex items-center space-x-2 ml-4 flex-shrink-0">
+                        <div className={`text-center px-2 py-1 rounded text-xs ${
+                          isSelected ? 'bg-orange-100 dark:bg-orange-800/30' : 'bg-gray-100 dark:bg-gray-600'
                         }`}>
-                          {model.description}
-                        </p>
-                        
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className={`text-center p-2 rounded ${
-                            isSelected ? 'bg-orange-100 dark:bg-orange-800/30' : 'bg-gray-100 dark:bg-gray-600'
+                          <div className={`font-bold ${
+                            isSelected ? 'text-orange-800 dark:text-orange-200' : 'text-gray-900 dark:text-white'
                           }`}>
-                            <div className={`text-sm font-bold ${
-                              isSelected ? 'text-orange-800 dark:text-orange-200' : 'text-gray-900 dark:text-white'
-                            }`}>
-                              {model.rpm}
-                            </div>
-                            <div className={`text-xs ${
-                              isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'
-                            }`}>
-                              RPM
-                            </div>
+                            {model.rpm}
                           </div>
-                          <div className={`text-center p-2 rounded ${
-                            isSelected ? 'bg-orange-100 dark:bg-orange-800/30' : 'bg-gray-100 dark:bg-gray-600'
+                          <div className={`text-xs ${
+                            isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'
                           }`}>
-                            <div className={`text-sm font-bold ${
-                              isSelected ? 'text-orange-800 dark:text-orange-200' : 'text-gray-900 dark:text-white'
-                            }`}>
-                              {formatNumber(model.tpm)}
-                            </div>
-                            <div className={`text-xs ${
-                              isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'
-                            }`}>
-                              TPM
-                            </div>
+                            RPM
                           </div>
-                          <div className={`text-center p-2 rounded ${
-                            isSelected ? 'bg-orange-100 dark:bg-orange-800/30' : 'bg-gray-100 dark:bg-gray-600'
+                        </div>
+                        <div className={`text-center px-2 py-1 rounded text-xs ${
+                          isSelected ? 'bg-orange-100 dark:bg-orange-800/30' : 'bg-gray-100 dark:bg-gray-600'
+                        }`}>
+                          <div className={`font-bold ${
+                            isSelected ? 'text-orange-800 dark:text-orange-200' : 'text-gray-900 dark:text-white'
                           }`}>
-                            <div className={`text-sm font-bold ${
-                              isSelected ? 'text-orange-800 dark:text-orange-200' : 'text-gray-900 dark:text-white'
-                            }`}>
-                              {formatNumber(model.rpd)}
-                            </div>
-                            <div className={`text-xs ${
-                              isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'
-                            }`}>
-                              RPD
-                            </div>
+                            {formatNumber(model.tpm)}
+                          </div>
+                          <div className={`text-xs ${
+                            isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'
+                          }`}>
+                            TPM
+                          </div>
+                        </div>
+                        <div className={`text-center px-2 py-1 rounded text-xs ${
+                          isSelected ? 'bg-orange-100 dark:bg-orange-800/30' : 'bg-gray-100 dark:bg-gray-600'
+                        }`}>
+                          <div className={`font-bold ${
+                            isSelected ? 'text-orange-800 dark:text-orange-200' : 'text-gray-900 dark:text-white'
+                          }`}>
+                            {formatNumber(model.rpd)}
+                          </div>
+                          <div className={`text-xs ${
+                            isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'
+                          }`}>
+                            RPD
                           </div>
                         </div>
                       </div>
