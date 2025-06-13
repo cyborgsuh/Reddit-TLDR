@@ -44,7 +44,10 @@ export async function fetchTopComments(
   maxComments: number = 5,
   commentLimit: number = 10
 ): Promise<string[]> {
-  const url = `/api/reddit/r/${subreddit}/comments/${postId}.json?sort=top&limit=${commentLimit}`;
+  // Use Netlify function for production, Vite proxy for development
+  const isProduction = import.meta.env.PROD;
+  const baseUrl = isProduction ? '/.netlify/functions' : '/api/reddit';
+  const url = `${baseUrl}/reddit-comments?subreddit=${subreddit}&postId=${postId}&sort=top&limit=${commentLimit}`;
   
   try {
     const response = await fetch(url);
@@ -91,7 +94,10 @@ export async function fetchTopComments(
 }
 
 export async function searchReddit(query: string, limit: number = 25): Promise<PostRecord[]> {
-  const url = `/api/reddit/search.json?q=${encodeURIComponent(query)}&limit=${limit}`;
+  // Use Netlify function for production, Vite proxy for development
+  const isProduction = import.meta.env.PROD;
+  const baseUrl = isProduction ? '/.netlify/functions' : '/api/reddit';
+  const url = `${baseUrl}/reddit-search?q=${encodeURIComponent(query)}&limit=${limit}`;
   
   try {
     const response = await fetch(url);
