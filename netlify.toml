@@ -3,7 +3,7 @@
   command = "npm run build"
 
 [functions]
-  directory = "api"
+  directory = "netlify/functions"
 
 [[redirects]]
   from = "/*"
@@ -13,4 +13,4 @@
 [dev]
   port = 8888
   publish = "dist"
-  functions = "api"
+  functions = "netlify/functions"
