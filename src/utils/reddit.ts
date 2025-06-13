@@ -44,10 +44,11 @@ export async function fetchTopComments(
   maxComments: number = 5,
   commentLimit: number = 10
 ): Promise<string[]> {
-  // Use Netlify function for production, Vite proxy for development
+  // Use Netlify function for production, direct Reddit API path for development
   const isProduction = import.meta.env.PROD;
-  const baseUrl = isProduction ? '/.netlify/functions' : '/api/reddit';
-  const url = `${baseUrl}/reddit-comments?subreddit=${subreddit}&postId=${postId}&sort=top&limit=${commentLimit}`;
+  const url = isProduction 
+    ? `/.netlify/functions/reddit-comments?subreddit=${subreddit}&postId=${postId}&sort=top&limit=${commentLimit}`
+    : `/api/reddit/r/${subreddit}/comments/${postId}.json?sort=top&limit=${commentLimit}`;
   
   try {
     const response = await fetch(url);
@@ -94,10 +95,11 @@ export async function fetchTopComments(
 }
 
 export async function searchReddit(query: string, limit: number = 25): Promise<PostRecord[]> {
-  // Use Netlify function for production, Vite proxy for development
+  // Use Netlify function for production, direct Reddit API path for development
   const isProduction = import.meta.env.PROD;
-  const baseUrl = isProduction ? '/.netlify/functions' : '/api/reddit';
-  const url = `${baseUrl}/reddit-search?q=${encodeURIComponent(query)}&limit=${limit}`;
+  const url = isProduction 
+    ? `/.netlify/functions/reddit-search?q=${encodeURIComponent(query)}&limit=${limit}`
+    : `/api/reddit/search.json?q=${encodeURIComponent(query)}&limit=${limit}`;
   
   try {
     const response = await fetch(url);
