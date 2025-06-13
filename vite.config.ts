@@ -19,6 +19,14 @@ export default defineConfig({
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
+      },
+      '/api/gemini': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        configure: (proxy, options) => {
+          // For development, we'll use a local proxy that forwards to our serverless functions
+          // This is handled by the updated gemini.ts file
+        }
       }
     }
   },
