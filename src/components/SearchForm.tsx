@@ -98,32 +98,24 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
           <label htmlFor="apiKey" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Gemini API Key
           </label>
-          <div className="flex space-x-3">
-            <div className="relative flex-1">
-              <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
-              <input
-                type={showApiKey ? 'text' : 'password'}
-                id="apiKey"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter your Gemini API key"
-                className="w-full pl-10 pr-16 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
-                disabled={isAnalyzing}
-              />
-              <button
-                type="button"
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm"
-              >
-                {showApiKey ? 'Hide' : 'Show'}
-              </button>
-            </div>
-            
-            <ModelSelector
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
+          <div className="relative">
+            <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
+            <input
+              type={showApiKey ? 'text' : 'password'}
+              id="apiKey"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Enter your Gemini API key"
+              className="w-full pl-10 pr-16 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
               disabled={isAnalyzing}
             />
+            <button
+              type="button"
+              onClick={() => setShowApiKey(!showApiKey)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm"
+            >
+              {showApiKey ? 'Hide' : 'Show'}
+            </button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Get your API key from{' '}
@@ -137,6 +129,13 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
             </a>
           </p>
         </div>
+
+        {/* Model Selector */}
+        <ModelSelector
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+          disabled={isAnalyzing}
+        />
 
         {/* Advanced Settings */}
         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-4 transition-colors duration-300">
