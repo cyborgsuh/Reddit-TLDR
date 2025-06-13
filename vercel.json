@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/reddit/search.json",
+      "destination": "/api/reddit/search"
+    },
+    {
+      "source": "/api/reddit/r/:subreddit/comments/:postId.json",
+      "destination": "/api/reddit/r/:subreddit/comments/:postId"
+    }
+  ]
+}
