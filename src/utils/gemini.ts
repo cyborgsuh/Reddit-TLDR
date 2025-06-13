@@ -1,6 +1,8 @@
 import { SentimentResult, AggregatedResult } from '../types';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const PRIMARY_MODEL = 'gemini-2.0-flash-exp';
+const FALLBACK_MODEL = 'gemini-2.0-flash';
 
 function cleanJsonResponse(text: string): string {
   let cleaned = text.trim();
@@ -13,7 +15,32 @@ function cleanJsonResponse(text: string): string {
 }
 
 async function callGeminiAPI(prompt: string, apiKey: string, maxRetries: number = 3): Promise<string> {
-  const url = `${GEMINI_API_URL}?key=${apiKey}`;
+  // First try with the primary model (experimental)
+  try {
+    return await attemptWithModel(PRIMARY_MODEL, prompt, apiKey, maxRetries);
+  } catch (primaryError) {
+    console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, primaryError);
+    
+    // If primary model fails due to rate limiting or service issues, try fallback
+    if (primaryError instanceof Error && 
+        (primaryError.message.includes('Rate limited') || 
+         primaryError.message.includes('Service temporarily unavailable'))) {
+      console.log(`Switching to fallback model: ${FALLBACK_MODEL}`);
+      try {
+        return await attemptWithModel(FALLBACK_MODEL, prompt, apiKey, maxRetries);
+      } catch (fallbackError) {
+        console.error(`Fallback model (${FALLBACK_MODEL}) also failed:`, fallbackError);
+        throw fallbackError;
+      }
+    }
+    
+    // If it's not a rate limiting issue, throw the original error
+    throw primaryError;
+  }
+}
+
+async function attemptWithModel(model: string, prompt: string, apiKey: string, maxRetries: number): Promise<string> {
+  const url = `${GEMINI_API_BASE_URL}/${model}:generateContent?key=${apiKey}`;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -32,7 +59,7 @@ async function callGeminiAPI(prompt: string, apiKey: string, maxRetries: number 
       });
 
       if (response.status === 429) {
-        console.warn(`Rate limited (429). Attempt ${attempt + 1}/${maxRetries}. Retrying after 5 seconds...`);
+        console.warn(`Rate limited (429) for ${model}. Attempt ${attempt + 1}/${maxRetries}. Retrying after 5 seconds...`);
         if (attempt < maxRetries - 1) {
           await new Promise(resolve => setTimeout(resolve, 5000));
           continue;
@@ -41,7 +68,7 @@ async function callGeminiAPI(prompt: string, apiKey: string, maxRetries: number 
       }
 
       if (response.status === 503) {
-        console.warn(`Service unavailable (503). Attempt ${attempt + 1}/${maxRetries}. Retrying after 5 seconds...`);
+        console.warn(`Service unavailable (503) for ${model}. Attempt ${attempt + 1}/${maxRetries}. Retrying after 5 seconds...`);
         if (attempt < maxRetries - 1) {
           await new Promise(resolve => setTimeout(resolve, 5000));
           continue;
@@ -56,7 +83,7 @@ async function callGeminiAPI(prompt: string, apiKey: string, maxRetries: number 
       const data = await response.json();
       return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     } catch (error) {
-      console.error(`Gemini API error (attempt ${attempt + 1}/${maxRetries}):`, error);
+      console.error(`Gemini API error for ${model} (attempt ${attempt + 1}/${maxRetries}):`, error);
       if (attempt < maxRetries - 1) {
         await new Promise(resolve => setTimeout(resolve, 2000));
       } else {
