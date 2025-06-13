@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Key, MessageSquare, Clock } from 'lucide-react';
+import ModelSelector from './ModelSelector';
 
 interface SearchFormProps {
-  onSearch: (query: string, apiKey: string, postLimit: number, maxRetries: number) => void;
+  onSearch: (query: string, apiKey: string, postLimit: number, maxRetries: number, selectedModel: string) => void;
   isAnalyzing: boolean;
 }
 
 const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
   const [query, setQuery] = useState('');
   const [apiKey, setApiKey] = useState('');
-  const [postLimit, setPostLimit] = useState(10); // Changed default to 10
+  const [postLimit, setPostLimit] = useState(10);
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash'); // Default to stable model
   const [showApiKey, setShowApiKey] = useState(false);
 
   // Calculate estimated time range based on performance data and rate limits
@@ -51,7 +53,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && apiKey.trim()) {
-      onSearch(query.trim(), apiKey.trim(), postLimit, 12); // Fixed max retries to 12
+      onSearch(query.trim(), apiKey.trim(), postLimit, 12, selectedModel);
     }
   };
 
@@ -96,24 +98,32 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
           <label htmlFor="apiKey" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Gemini API Key
           </label>
-          <div className="relative">
-            <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
-            <input
-              type={showApiKey ? 'text' : 'password'}
-              id="apiKey"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your Gemini API key"
-              className="w-full pl-10 pr-16 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
+          <div className="flex space-x-3">
+            <div className="relative flex-1">
+              <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                id="apiKey"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Enter your Gemini API key"
+                className="w-full pl-10 pr-16 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
+                disabled={isAnalyzing}
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm"
+              >
+                {showApiKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            
+            <ModelSelector
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
               disabled={isAnalyzing}
             />
-            <button
-              type="button"
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm"
-            >
-              {showApiKey ? 'Hide' : 'Show'}
-            </button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Get your API key from{' '}

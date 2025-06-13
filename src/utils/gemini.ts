@@ -1,8 +1,6 @@
 import { SentimentResult, AggregatedResult } from '../types';
 
 const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const PRIMARY_MODEL = 'gemini-2.0-flash-exp';
-const FALLBACK_MODEL = 'gemini-2.0-flash';
 
 // Module-level flag to remember if we should prefer the fallback model
 let preferFallbackModel = false;
@@ -17,30 +15,42 @@ function cleanJsonResponse(text: string): string {
   return cleaned.trim();
 }
 
-async function callGeminiAPI(prompt: string, apiKey: string, maxRetries: number = 3): Promise<string> {
-  // If we've previously encountered rate limiting or service issues, use fallback model directly
-  if (preferFallbackModel) {
-    console.log(`Using fallback model (${FALLBACK_MODEL}) due to previous issues with primary model`);
-    return await attemptWithModel(FALLBACK_MODEL, prompt, apiKey, maxRetries);
+async function callGeminiAPI(prompt: string, apiKey: string, selectedModel: string, maxRetries: number = 3): Promise<string> {
+  // Define fallback models for each primary model
+  const fallbackModels: Record<string, string> = {
+    'gemini-2.5-flash-preview-05-20': 'gemini-2.0-flash',
+    'gemini-2.0-flash-exp': 'gemini-2.0-flash',
+    'gemini-2.0-flash': 'gemini-1.5-flash',
+    'gemini-2.0-flash-lite': 'gemini-1.5-flash',
+    'gemini-1.5-flash': 'gemini-1.5-flash' // No fallback for this one
+  };
+
+  const fallbackModel = fallbackModels[selectedModel];
+
+  // If we've previously encountered rate limiting or service issues with this model, use fallback directly
+  if (preferFallbackModel && fallbackModel && fallbackModel !== selectedModel) {
+    console.log(`Using fallback model (${fallbackModel}) due to previous issues with ${selectedModel}`);
+    return await attemptWithModel(fallbackModel, prompt, apiKey, maxRetries);
   }
 
-  // First try with the primary model (experimental)
+  // First try with the selected model
   try {
-    return await attemptWithModel(PRIMARY_MODEL, prompt, apiKey, maxRetries);
+    return await attemptWithModel(selectedModel, prompt, apiKey, maxRetries);
   } catch (primaryError) {
-    console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, primaryError);
+    console.warn(`Primary model (${selectedModel}) failed:`, primaryError);
     
     // If primary model fails due to rate limiting or service issues, switch to fallback permanently
     if (primaryError instanceof Error && 
         (primaryError.message.includes('Rate limited') || 
-         primaryError.message.includes('Service temporarily unavailable'))) {
-      console.log(`Switching to fallback model permanently: ${FALLBACK_MODEL}`);
+         primaryError.message.includes('Service temporarily unavailable')) &&
+        fallbackModel && fallbackModel !== selectedModel) {
+      console.log(`Switching to fallback model permanently: ${fallbackModel}`);
       preferFallbackModel = true;
       
       try {
-        return await attemptWithModel(FALLBACK_MODEL, prompt, apiKey, maxRetries);
+        return await attemptWithModel(fallbackModel, prompt, apiKey, maxRetries);
       } catch (fallbackError) {
-        console.error(`Fallback model (${FALLBACK_MODEL}) also failed:`, fallbackError);
+        console.error(`Fallback model (${fallbackModel}) also failed:`, fallbackError);
         throw fallbackError;
       }
     }
@@ -110,7 +120,8 @@ export async function analyzeSentiment(
   record: { combined: string; comments?: string[] },
   keyword: string,
   apiKey: string,
-  maxRetries: number = 3
+  maxRetries: number = 3,
+  selectedModel: string = 'gemini-2.0-flash'
 ): Promise<SentimentResult | null> {
   const commentsSection = record.comments && record.comments.length > 0
     ? `\nTop-level comments:\n${record.comments.join('\n')}`
@@ -142,7 +153,7 @@ Reddit post:
 ${record.combined}${commentsSection}`;
 
   try {
-    const response = await callGeminiAPI(prompt, apiKey, maxRetries);
+    const response = await callGeminiAPI(prompt, apiKey, selectedModel, maxRetries);
     const cleaned = cleanJsonResponse(response);
     return JSON.parse(cleaned) as SentimentResult;
   } catch (error) {
@@ -156,7 +167,8 @@ export async function aggregateResults(
   negatives: string[],
   keyword: string,
   apiKey: string,
-  maxRetries: number = 3
+  maxRetries: number = 3,
+  selectedModel: string = 'gemini-2.0-flash'
 ): Promise<AggregatedResult | null> {
   const prompt = `You are a language analyst specializing in summarizing factual insights from Reddit sentiment analysis.
 
@@ -185,7 +197,7 @@ Your output:
 (Provide only the JSON object, do not include any extra text or formatting)`;
 
   try {
-    const response = await callGeminiAPI(prompt, apiKey, maxRetries);
+    const response = await callGeminiAPI(prompt, apiKey, selectedModel, maxRetries);
     const cleaned = cleanJsonResponse(response);
     return JSON.parse(cleaned) as AggregatedResult;
   } catch (error) {

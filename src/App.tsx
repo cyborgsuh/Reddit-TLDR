@@ -48,7 +48,7 @@ function App() {
     setIsDark(!isDark);
   };
 
-  const handleSearch = async (query: string, apiKey: string, postLimit: number, maxRetries: number) => {
+  const handleSearch = async (query: string, apiKey: string, postLimit: number, maxRetries: number, selectedModel: string) => {
     setIsAnalyzing(true);
     setAnalysisResults([]);
     setAggregatedResult(null);
@@ -88,7 +88,7 @@ function App() {
         setCurrentPost(i + 1);
 
         try {
-          const result = await analyzeSentiment(post, query, apiKey, 12); // Fixed max retries to 12
+          const result = await analyzeSentiment(post, query, apiKey, maxRetries, selectedModel);
           const analysisResult: AnalysisResult = { post, result };
           
           results.push(analysisResult);
@@ -122,7 +122,7 @@ function App() {
       
       if (allPositives.length > 0 || allNegatives.length > 0) {
         try {
-          const aggregated = await aggregateResults(allPositives, allNegatives, query, apiKey, 12); // Fixed max retries to 12
+          const aggregated = await aggregateResults(allPositives, allNegatives, query, apiKey, maxRetries, selectedModel);
           setAggregatedResult(aggregated);
         } catch (error) {
           console.error('Error aggregating results:', error);
