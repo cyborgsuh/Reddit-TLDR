@@ -105,7 +105,19 @@ export async function searchReddit(query: string, limit: number = 25): Promise<P
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Reddit search failed:', response.status, errorText);
+      
+      // Try to parse error details
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.suggestion) {
+          throw new Error(`${errorData.error}: ${errorData.suggestion}`);
+        }
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      } catch (parseError) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     }
     
     const data = await response.json();
@@ -129,7 +141,9 @@ export async function searchReddit(query: string, limit: number = 25): Promise<P
         const combined = plainSelftext ? `${title}\n${plainSelftext}` : title;
         
         // Fetch comments for this post with configurable limit
-        const comments = await fetchTopComments(subreddit, postId, 5, Math.min(limit, 20));
+        // Reduce comment fetching in production to avoid rate limits
+        const commentLimit = isProduction ? Math.min(limit, 10) : Math.min(limit, 20);
+        const comments = await fetchTopComments(subreddit, postId, 3, commentLimit);
         
         records.push({
           title,
