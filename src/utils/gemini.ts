@@ -4,6 +4,9 @@ const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/mo
 const PRIMARY_MODEL = 'gemini-2.0-flash-exp';
 const FALLBACK_MODEL = 'gemini-2.0-flash';
 
+// Module-level flag to remember if we should prefer the fallback model
+let preferFallbackModel = false;
+
 function cleanJsonResponse(text: string): string {
   let cleaned = text.trim();
   
@@ -15,17 +18,25 @@ function cleanJsonResponse(text: string): string {
 }
 
 async function callGeminiAPI(prompt: string, apiKey: string, maxRetries: number = 3): Promise<string> {
+  // If we've previously encountered rate limiting or service issues, use fallback model directly
+  if (preferFallbackModel) {
+    console.log(`Using fallback model (${FALLBACK_MODEL}) due to previous issues with primary model`);
+    return await attemptWithModel(FALLBACK_MODEL, prompt, apiKey, maxRetries);
+  }
+
   // First try with the primary model (experimental)
   try {
     return await attemptWithModel(PRIMARY_MODEL, prompt, apiKey, maxRetries);
   } catch (primaryError) {
     console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, primaryError);
     
-    // If primary model fails due to rate limiting or service issues, try fallback
+    // If primary model fails due to rate limiting or service issues, switch to fallback permanently
     if (primaryError instanceof Error && 
         (primaryError.message.includes('Rate limited') || 
          primaryError.message.includes('Service temporarily unavailable'))) {
-      console.log(`Switching to fallback model: ${FALLBACK_MODEL}`);
+      console.log(`Switching to fallback model permanently: ${FALLBACK_MODEL}`);
+      preferFallbackModel = true;
+      
       try {
         return await attemptWithModel(FALLBACK_MODEL, prompt, apiKey, maxRetries);
       } catch (fallbackError) {
