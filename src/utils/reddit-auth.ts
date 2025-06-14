@@ -1,6 +1,6 @@
 import { RedditAuthState, RedditTokenResponse } from '../types';
 
-const REDDIT_CLIENT_ID = import.meta.env.VITE_REDDIT_CLIENT_ID;
+const REDDIT_CLIENT_ID = import.meta.env.VITE_REDDIT_CLIENT_ID || import.meta.env.VITE_PUBLIC_REDDIT_CLIENT_ID;
 const REDDIT_REDIRECT_URI = `${window.location.origin}/auth/callback`;
 
 // Reddit OAuth2 endpoints
@@ -66,6 +66,10 @@ export class RedditAuth {
   }
 
   generateAuthUrl(): string {
+    if (!REDDIT_CLIENT_ID) {
+      throw new Error('Reddit Client ID is not configured. Please set VITE_REDDIT_CLIENT_ID in your environment variables.');
+    }
+
     const state = Math.random().toString(36).substring(2, 15);
     localStorage.setItem('reddit_auth_state_param', state);
 

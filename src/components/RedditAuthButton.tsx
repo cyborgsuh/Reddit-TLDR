@@ -10,9 +10,14 @@ interface RedditAuthButtonProps {
 
 const RedditAuthButton: React.FC<RedditAuthButtonProps> = ({ authState, onAuthStateChange }) => {
   const handleLogin = () => {
-    const redditAuth = RedditAuth.getInstance();
-    const authUrl = redditAuth.generateAuthUrl();
-    window.location.href = authUrl;
+    try {
+      const redditAuth = RedditAuth.getInstance();
+      const authUrl = redditAuth.generateAuthUrl();
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error generating auth URL:', error);
+      alert('Reddit authentication is not properly configured. Please check the environment variables.');
+    }
   };
 
   const handleLogout = () => {
@@ -44,10 +49,16 @@ const RedditAuthButton: React.FC<RedditAuthButtonProps> = ({ authState, onAuthSt
   return (
     <button
       onClick={handleLogin}
-      className="flex items-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+      className="flex items-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+      disabled={!import.meta.env.VITE_REDDIT_CLIENT_ID && !import.meta.env.VITE_PUBLIC_REDDIT_CLIENT_ID}
     >
       <LogIn className="h-4 w-4" />
-      <span>Connect Reddit Account</span>
+      <span>
+        {(!import.meta.env.VITE_REDDIT_CLIENT_ID && !import.meta.env.VITE_PUBLIC_REDDIT_CLIENT_ID) 
+          ? 'Reddit Auth Not Configured' 
+          : 'Connect Reddit Account'
+        }
+      </span>
     </button>
   );
 };
