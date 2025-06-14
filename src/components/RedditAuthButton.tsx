@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { ExternalLink, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ensureAnonymousUserSession, checkRedditConnection } from '../utils/reddit-oauth';
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -25,20 +26,7 @@ const RedditAuthButton: React.FC<RedditAuthButtonProps> = ({ onConnectionChange 
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    checkAuthStatus();
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user);
-        checkRedditConnection(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setIsConnected(false);
-        setRedditUsername(null);
-        onConnectionChange?.(false);
-      }
-    });
+    initializeUser();
 
     // Check for OAuth callback success
     const urlParams = new URLSearchParams(window.location.search);
@@ -53,86 +41,30 @@ const RedditAuthButton: React.FC<RedditAuthButtonProps> = ({ onConnectionChange 
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-
-    return () => subscription.unsubscribe();
   }, []);
 
-  const checkAuthStatus = async () => {
+  const initializeUser = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        await checkRedditConnection(session.user.id);
-      }
+      // Ensure we have an anonymous user session
+      const user = await ensureAnonymousUserSession();
+      setUser(user);
+      
+      // Check Reddit connection status
+      const { isConnected, username } = await checkRedditConnection();
+      setIsConnected(isConnected);
+      setRedditUsername(username || null);
+      onConnectionChange?.(isConnected, username);
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      console.error('Error initializing user:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const checkRedditConnection = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('reddit_credentials')
-        .select('reddit_username, expires_at, created_at')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        if (error.code !== 'PGRST116') { // Not found error
-          console.error('Error checking Reddit connection:', error);
-        }
-        setIsConnected(false);
-        setRedditUsername(null);
-        onConnectionChange?.(false);
-        return;
-      }
-
-      const credentials = data as RedditCredentials;
-      const now = new Date();
-      const expiresAt = new Date(credentials.expires_at);
-
-      if (now >= expiresAt) {
-        // Token expired
-        setIsConnected(false);
-        setRedditUsername(null);
-        onConnectionChange?.(false);
-      } else {
-        setIsConnected(true);
-        setRedditUsername(credentials.reddit_username);
-        onConnectionChange?.(true, credentials.reddit_username);
-      }
-    } catch (error) {
-      console.error('Error checking Reddit connection:', error);
-      setIsConnected(false);
-      setRedditUsername(null);
-      onConnectionChange?.(false);
-    }
-  };
-
-  const handleSignIn = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-      
-      if (error) {
-        console.error('Error signing in:', error);
-        alert('Failed to sign in. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error during sign in:', error);
-      alert('Failed to sign in. Please try again.');
-    }
-  };
-
   const handleConnectReddit = async () => {
     if (!user) {
-      await handleSignIn();
+      // This shouldn't happen since we ensure anonymous session on mount
+      console.error('No user session available');
       return;
     }
 
@@ -192,30 +124,6 @@ const RedditAuthButton: React.FC<RedditAuthButtonProps> = ({ onConnectionChange 
       <div className="flex items-center justify-center p-4">
         <Loader2 className="h-5 w-5 animate-spin text-orange-600" />
         <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Checking connection...</span>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div className="flex items-start space-x-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-1">
-              Sign In Required
-            </h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-              Sign in to connect your Reddit account and access higher API rate limits.
-            </p>
-            <button
-              onClick={handleSignIn}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 rounded-lg transition-colors"
-            >
-              Sign In with Google
-            </button>
-          </div>
-        </div>
       </div>
     );
   }

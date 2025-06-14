@@ -6,6 +6,29 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+export async function ensureAnonymousUserSession() {
+  try {
+    // Check if we already have a session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.user) {
+      return session.user;
+    }
+    
+    // Sign in anonymously if no session exists
+    const { data, error } = await supabase.auth.signInAnonymously();
+    
+    if (error) {
+      throw new Error(`Failed to create anonymous session: ${error.message}`);
+    }
+    
+    return data.user;
+  } catch (error) {
+    console.error('Error ensuring anonymous user session:', error);
+    throw error;
+  }
+}
+
 export function markdownToText(md: string): string {
   let text = md;
   
@@ -46,12 +69,9 @@ export function markdownToText(md: string): string {
 
 async function makeAuthenticatedRedditRequest(path: string, params?: string): Promise<any> {
   try {
-    // Get current session
+    // Ensure we have an anonymous user session
+    const user = await ensureAnonymousUserSession();
     const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      throw new Error('User not authenticated');
-    }
 
     // Make request through our Supabase edge function
     const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reddit-api-proxy`);
@@ -63,7 +83,7 @@ async function makeAuthenticatedRedditRequest(path: string, params?: string): Pr
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${session?.access_token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -174,16 +194,13 @@ export async function searchRedditOAuth(query: string, limit: number = 25): Prom
 
 export async function checkRedditConnection(): Promise<{ isConnected: boolean; username?: string }> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      return { isConnected: false };
-    }
+    // Ensure we have an anonymous user session
+    const user = await ensureAnonymousUserSession();
 
     const { data, error } = await supabase
       .from('reddit_credentials')
       .select('reddit_username, expires_at')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (error || !data) {
