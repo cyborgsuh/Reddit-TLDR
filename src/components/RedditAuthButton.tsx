@@ -9,7 +9,15 @@ interface RedditAuthButtonProps {
 }
 
 const RedditAuthButton: React.FC<RedditAuthButtonProps> = ({ authState, onAuthStateChange }) => {
+  const redditClientId = import.meta.env.VITE_REDDIT_CLIENT_ID || import.meta.env.VITE_PUBLIC_REDDIT_CLIENT_ID;
+  const isConfigured = Boolean(redditClientId);
+
   const handleLogin = () => {
+    if (!isConfigured) {
+      alert('Reddit authentication is not properly configured. Please check the environment variables.');
+      return;
+    }
+
     try {
       const redditAuth = RedditAuth.getInstance();
       const authUrl = redditAuth.generateAuthUrl();
@@ -49,12 +57,15 @@ const RedditAuthButton: React.FC<RedditAuthButtonProps> = ({ authState, onAuthSt
   return (
     <button
       onClick={handleLogin}
-      className="flex items-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-      disabled={!import.meta.env.VITE_REDDIT_CLIENT_ID && !import.meta.env.VITE_PUBLIC_REDDIT_CLIENT_ID}
+      className={`flex items-center space-x-2 px-4 py-2 font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
+        isConfigured 
+          ? 'bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white' 
+          : 'bg-gray-400 hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-700 text-white cursor-pointer'
+      }`}
     >
       <LogIn className="h-4 w-4" />
       <span>
-        {(!import.meta.env.VITE_REDDIT_CLIENT_ID && !import.meta.env.VITE_PUBLIC_REDDIT_CLIENT_ID) 
+        {!isConfigured
           ? 'Reddit Auth Not Configured' 
           : 'Connect Reddit Account'
         }

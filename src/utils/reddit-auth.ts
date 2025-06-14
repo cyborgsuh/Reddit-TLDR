@@ -1,7 +1,12 @@
 import { RedditAuthState, RedditTokenResponse } from '../types';
 
-const REDDIT_CLIENT_ID = import.meta.env.VITE_REDDIT_CLIENT_ID || import.meta.env.VITE_PUBLIC_REDDIT_CLIENT_ID;
-const REDDIT_REDIRECT_URI = `${window.location.origin}/auth/callback`;
+const getRedditClientId = () => {
+  return import.meta.env.VITE_REDDIT_CLIENT_ID || import.meta.env.VITE_PUBLIC_REDDIT_CLIENT_ID;
+};
+
+const getRedirectUri = () => {
+  return `${window.location.origin}/auth/callback`;
+};
 
 // Reddit OAuth2 endpoints
 const REDDIT_AUTH_URL = 'https://www.reddit.com/api/v1/authorize';
@@ -66,6 +71,9 @@ export class RedditAuth {
   }
 
   generateAuthUrl(): string {
+    const REDDIT_CLIENT_ID = getRedditClientId();
+    const REDDIT_REDIRECT_URI = getRedirectUri();
+
     if (!REDDIT_CLIENT_ID) {
       throw new Error('Reddit Client ID is not configured. Please set VITE_REDDIT_CLIENT_ID in your environment variables.');
     }
@@ -116,6 +124,7 @@ export class RedditAuth {
   }
 
   private async exchangeCodeForTokens(code: string): Promise<RedditTokenResponse> {
+    const REDDIT_REDIRECT_URI = getRedirectUri();
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const response = await fetch(`${supabaseUrl}/functions/v1/reddit-token`, {
       method: 'POST',
