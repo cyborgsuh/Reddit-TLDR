@@ -7,6 +7,7 @@ import Summary from './components/Summary';
 import Footer from './components/Footer';
 import DarkModeToggle from './components/DarkModeToggle';
 import { searchReddit } from './utils/reddit';
+import { searchRedditOAuth, checkRedditConnection } from './utils/reddit-oauth';
 import { analyzeSentiment, aggregateResults } from './utils/gemini';
 import { AnalysisResult, AggregatedResult, SentimentCounts } from './types';
 
@@ -34,6 +35,7 @@ function App() {
   const [dataRetrievalTime, setDataRetrievalTime] = useState(0);
   const [llmProcessingTime, setLlmProcessingTime] = useState(0);
   const [keyword, setKeyword] = useState('');
+  const [useOAuth, setUseOAuth] = useState(false);
 
   useEffect(() => {
     if (isDark) {
@@ -44,6 +46,14 @@ function App() {
     localStorage.setItem('darkMode', isDark.toString());
   }, [isDark]);
 
+  useEffect(() => {
+    // Check if user has Reddit connection on app load
+    checkRedditConnection().then(({ isConnected }) => {
+      if (isConnected) {
+        setUseOAuth(true);
+      }
+    });
+  }, []);
   const toggleDarkMode = () => {
     setIsDark(!isDark);
   };
@@ -62,7 +72,9 @@ function App() {
       setCurrentStage('fetching');
       const dataStartTime = Date.now();
       
-      const posts = await searchReddit(query, postLimit);
+      const posts = useOAuth 
+        ? await searchRedditOAuth(query, postLimit)
+        : await searchReddit(query, postLimit);
       setTotalPosts(posts.length);
       
       const dataEndTime = Date.now();
@@ -150,7 +162,12 @@ function App() {
       <Header />
       
       <div className="container mx-auto max-w-6xl pb-12">
-        <SearchForm onSearch={handleSearch} isAnalyzing={isAnalyzing} />
+        <SearchForm 
+          onSearch={handleSearch} 
+          isAnalyzing={isAnalyzing}
+          useOAuth={useOAuth}
+          onOAuthToggle={setUseOAuth}
+        />
 
         {isAnalyzing && (
           <LoadingState 
