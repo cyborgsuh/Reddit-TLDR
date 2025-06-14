@@ -1,22 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Key, MessageSquare, Clock } from 'lucide-react';
 import ModelSelector from './ModelSelector';
-import RedditAuthButton from './RedditAuthButton';
 
 interface SearchFormProps {
   onSearch: (query: string, apiKey: string, postLimit: number, maxRetries: number, selectedModel: string) => void;
   isAnalyzing: boolean;
-  useOAuth?: boolean;
-  onOAuthToggle?: (useOAuth: boolean) => void;
 }
 
-const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing, useOAuth = false, onOAuthToggle }) => {
+const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
   const [query, setQuery] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [postLimit, setPostLimit] = useState(10);
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash'); // Default to stable model
   const [showApiKey, setShowApiKey] = useState(false);
-  const [isRedditConnected, setIsRedditConnected] = useState(false);
 
   // Calculate estimated time range based on performance data and rate limits
   const estimatedTimeRange = useMemo(() => {
@@ -56,7 +52,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing, useOAuth
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim() && (apiKey.trim() || (useOAuth && isRedditConnected))) {
+    if (query.trim() && apiKey.trim()) {
       onSearch(query.trim(), apiKey.trim(), postLimit, 12, selectedModel);
     }
   };
@@ -98,34 +94,8 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing, useOAuth
           </div>
         </div>
 
-        {/* Reddit OAuth Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Reddit API Access</h3>
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useOAuth}
-                onChange={(e) => onOAuthToggle?.(e.target.checked)}
-                disabled={isAnalyzing}
-                className="rounded border-gray-300 dark:border-gray-600 text-orange-600 focus:ring-orange-500 focus:ring-offset-0"
-              />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Use OAuth (Recommended)</span>
-            </label>
-          </div>
-          
-          {useOAuth && (
-            <RedditAuthButton 
-              onConnectionChange={(connected, username) => {
-                setIsRedditConnected(connected);
-              }}
-            />
-          )}
-        </div>
-
-        {!useOAuth && (
-          <div>
-           <label htmlFor="apiKey" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <div>
+          <label htmlFor="apiKey" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Gemini API Key
           </label>
           <div className="relative">
@@ -159,7 +129,6 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing, useOAuth
             </a>
           </p>
         </div>
-        )}
 
         {/* Model Selector */}
         <ModelSelector
@@ -211,9 +180,9 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing, useOAuth
 
         <button
           type="submit"
-          disabled={!query.trim() || (!apiKey.trim() && !(useOAuth && isRedditConnected)) || postLimit < 1 || isAnalyzing}
+          disabled={!query.trim() || !apiKey.trim() || postLimit < 1 || isAnalyzing}
           className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 ${
-            !query.trim() || (!apiKey.trim() && !(useOAuth && isRedditConnected)) || postLimit < 1 || isAnalyzing
+            !query.trim() || !apiKey.trim() || postLimit < 1 || isAnalyzing
               ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
               : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 dark:from-orange-700 dark:to-amber-700 dark:hover:from-orange-800 dark:hover:to-amber-800 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
           }`}
