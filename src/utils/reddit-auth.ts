@@ -112,10 +112,12 @@ export class RedditAuth {
   }
 
   private async exchangeCodeForTokens(code: string): Promise<RedditTokenResponse> {
-    const response = await fetch('/.netlify/functions/reddit-token', {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(`${supabaseUrl}/functions/v1/reddit-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         code,
@@ -138,10 +140,12 @@ export class RedditAuth {
     }
 
     try {
-      const response = await fetch('/.netlify/functions/reddit-refresh', {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/reddit-refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           refresh_token: this.authState.refreshToken
