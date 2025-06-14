@@ -216,7 +216,7 @@ export async function searchRedditOAuth(query: string, limit: number = 25): Prom
 export async function checkRedditConnection(): Promise<{ isConnected: boolean; username?: string }> {
   try {
     // Ensure we have an authenticated user session
-    const user = await ensureUserSession();
+    const user = await ensureAnonymousUserSession();
 
     const { data, error } = await supabase
       .from('reddit_credentials')
