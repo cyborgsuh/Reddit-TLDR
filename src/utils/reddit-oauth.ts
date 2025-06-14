@@ -6,7 +6,7 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-export async function ensureAnonymousUserSession() {
+export async function ensureUserSession() {
   try {
     // Check if we already have a session
     const { data: { session } } = await supabase.auth.getSession();
@@ -15,16 +15,10 @@ export async function ensureAnonymousUserSession() {
       return session.user;
     }
     
-    // Sign in anonymously if no session exists
-    const { data, error } = await supabase.auth.signInAnonymously();
-    
-    if (error) {
-      throw new Error(`Failed to create anonymous session: ${error.message}`);
-    }
-    
-    return data.user;
+    // If no session exists, the user needs to sign in
+    throw new Error('User must be authenticated to use Reddit features');
   } catch (error) {
-    console.error('Error ensuring anonymous user session:', error);
+    console.error('Error ensuring user session:', error);
     throw error;
   }
 }
@@ -69,9 +63,13 @@ export function markdownToText(md: string): string {
 
 async function makeAuthenticatedRedditRequest(path: string, params?: string): Promise<any> {
   try {
-    // Ensure we have an anonymous user session
-    const user = await ensureAnonymousUserSession();
+    // Ensure we have an authenticated user session
+    const user = await ensureUserSession();
     const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('No valid session token available');
+    }
 
     // Make request through our Supabase edge function
     const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reddit-api-proxy`);
@@ -83,7 +81,7 @@ async function makeAuthenticatedRedditRequest(path: string, params?: string): Pr
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${session?.access_token}`,
+        'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -194,8 +192,8 @@ export async function searchRedditOAuth(query: string, limit: number = 25): Prom
 
 export async function checkRedditConnection(): Promise<{ isConnected: boolean; username?: string }> {
   try {
-    // Ensure we have an anonymous user session
-    const user = await ensureAnonymousUserSession();
+    // Ensure we have an authenticated user session
+    const user = await ensureUserSession();
 
     const { data, error } = await supabase
       .from('reddit_credentials')
