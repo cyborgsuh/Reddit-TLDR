@@ -23,6 +23,29 @@ export async function ensureUserSession() {
   }
 }
 
+export async function ensureAnonymousUserSession() {
+  try {
+    // Check if we already have a session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.user) {
+      return session.user;
+    }
+    
+    // If no session exists, sign in anonymously
+    const { data, error } = await supabase.auth.signInAnonymously();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data.user;
+  } catch (error) {
+    console.error('Error ensuring anonymous user session:', error);
+    throw error;
+  }
+}
+
 export function markdownToText(md: string): string {
   let text = md;
   
