@@ -81,40 +81,52 @@ const LandingPage: React.FC = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-32">
+      <section className="relative overflow-hidden py-20 lg:py-32 min-h-screen flex items-center">
+        {/* Spline 3D Background */}
+        <div className="absolute inset-0 z-0">
+          <iframe 
+            src="https://my.spline.design/keyboard-jJ6PwzuJmsnLNAU8oA5nChzs/"
+            frameBorder="0"
+            width="100%"
+            height="100%"
+            className="w-full h-full object-cover opacity-80"
+            style={{ 
+              transform: 'scale(1.1)',
+              filter: 'brightness(0.9) contrast(1.1)'
+            }}
+          />
+          {/* Overlay to ensure text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-50/90 via-amber-50/80 to-yellow-50/90 dark:from-gray-900/90 dark:via-gray-800/80 dark:to-gray-900/90"></div>
+        </div>
+        
         <div className="container mx-auto px-6">
-          <div className="text-center max-w-4xl mx-auto">
+          <div className="text-center max-w-4xl mx-auto relative z-10">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-              AI-Powered Insights from 
+              AI-Powered Insights from
               <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent"> Reddit Discussions</span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-              Skip the endless scrolling. Get instant sentiment analysis and key insights from Reddit discussions using advanced AI technology.
+            <p className="text-xl md:text-2xl text-orange-600 dark:text-orange-400 mb-4 leading-relaxed font-semibold">
+              Smash the Reddit Key 🔥. Skip scrolling. Start analyzing now.
+            </p>
+            <p className="text-lg text-gray-700 dark:text-gray-200 mb-8 leading-relaxed">
+              Get instant sentiment analysis and key insights from Reddit discussions using advanced AI technology.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link 
                 to="/signup" 
-                className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center space-x-2 relative z-10"
               >
                 <span>Start Analyzing</span>
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <Link 
                 to="/demo" 
-                className="border-2 border-orange-600 dark:border-orange-400 text-orange-600 dark:text-orange-400 hover:bg-orange-600 hover:text-white dark:hover:bg-orange-400 dark:hover:text-gray-900 font-semibold px-8 py-4 rounded-lg transition-all duration-200"
+                className="border-2 border-orange-600 dark:border-orange-400 text-orange-600 dark:text-orange-400 hover:bg-orange-600 hover:text-white dark:hover:bg-orange-400 dark:hover:text-gray-900 font-semibold px-8 py-4 rounded-lg transition-all duration-200 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
               >
                 View Demo
               </Link>
             </div>
           </div>
-        </div>
-        
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-10 opacity-20 dark:opacity-10">
-          <MessageSquare className="h-16 w-16 text-orange-500 animate-pulse" />
-        </div>
-        <div className="absolute bottom-20 right-10 opacity-20 dark:opacity-10">
-          <Brain className="h-20 w-20 text-amber-500 animate-pulse" />
         </div>
       </section>
 
@@ -440,79 +452,4 @@ const LandingPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
               to="/signup" 
-              className="bg-white hover:bg-gray-100 text-orange-600 font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
-            >
-              Start Free Trial
-            </Link>
-            <Link 
-              to="/demo" 
-              className="border-2 border-white text-white hover:bg-white hover:text-orange-600 font-semibold px-8 py-4 rounded-lg transition-all duration-200"
-            >
-              View Demo
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <svg className="h-8 w-8 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
-                </svg>
-                <span className="text-xl font-bold">Reddit TLDR</span>
-              </div>
-              <p className="text-gray-400 leading-relaxed">
-                AI-powered insights from Reddit discussions. Understand public opinion in minutes, not hours.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><Link to="/demo" className="hover:text-white transition-colors">Demo</Link></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">&copy; 2024 Reddit TLDR. All rights reserved.</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">Terms</a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">Security</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-};
-
-export default LandingPage;
+              className="bg-white hover:bg-gray-100 text-orange-600 font-semibold px-8 py-4 rounde
