@@ -9,6 +9,7 @@ import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AppPage from './pages/AppPage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
@@ -29,6 +30,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AppPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               } 
             />

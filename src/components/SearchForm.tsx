@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Key, MessageSquare, Clock } from 'lucide-react';
 import ModelSelector from './ModelSelector';
+import { supabase } from '../lib/supabase';
 
 interface SearchFormProps {
   onSearch: (query: string, apiKey: string, postLimit: number, maxRetries: number, selectedModel: string) => void;
@@ -10,9 +11,45 @@ interface SearchFormProps {
 const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
   const [query, setQuery] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [loadingApiKey, setLoadingApiKey] = useState(true);
   const [postLimit, setPostLimit] = useState(10);
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash'); // Default to stable model
   const [showApiKey, setShowApiKey] = useState(false);
+
+  // Load user's saved API key on component mount
+  React.useEffect(() => {
+    const loadSavedApiKey = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          setLoadingApiKey(false);
+          return;
+        }
+
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-gemini-key`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.hasKey && data.apiKey && data.status === 'valid') {
+            setApiKey(data.apiKey);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved API key:', error);
+      } finally {
+        setLoadingApiKey(false);
+      }
+    };
+
+    loadSavedApiKey();
+  }, []);
 
   // Calculate estimated time range based on performance data and rate limits
   const estimatedTimeRange = useMemo(() => {
@@ -105,9 +142,9 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
               id="apiKey"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your Gemini API key"
+              placeholder={loadingApiKey ? "Loading saved API key..." : "Enter your Gemini API key"}
               className="w-full pl-10 pr-16 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || loadingApiKey}
             />
             <button
               type="button"
@@ -118,14 +155,14 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
             </button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Get your API key from{' '}
+            {apiKey ? 'Using saved API key. ' : 'Get your API key from '}
             <a
               href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noopener noreferrer"
               className="text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 underline"
             >
-              Google AI Studio
+              {apiKey ? 'Manage in Settings' : 'Google AI Studio'}
             </a>
           </p>
         </div>

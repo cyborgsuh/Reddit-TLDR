@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import SearchForm from '../components/SearchForm';
 import LoadingState from '../components/LoadingState';
@@ -213,6 +214,13 @@ const AppPage: React.FC = () => {
                 <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">{user?.email}</span>
               </div>
+              <Link
+                to="/settings"
+                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-all duration-200"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </Link>
               <button
                 onClick={handleSignOut}
                 className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-all duration-200"
