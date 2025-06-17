@@ -158,16 +158,16 @@ const LandingPage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center pt-20">
+      <section className="relative min-h-screen flex items-center pt-20 px-4 sm:px-6">
         <div className="container mx-auto px-6">
           {/* Content */}
-          <div className="relative z-10 max-w-2xl ml-[15%]">
+          <div className="relative z-10 max-w-2xl lg:ml-[15%] mx-auto lg:mx-0 text-center lg:text-left">
             <div>
-              <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
                 AI-Powered Insights from 
                 <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent"> Reddit Discussions</span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
                 Stop scrolling, smash the Reddit button 🔥 <br />and start analyzing
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -187,7 +187,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
           </div>          {/* 3D Model */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-[10%] w-[500px] h-[500px] lg:w-[600px] lg:h-[600px] overflow-hidden">
+          <div className="hidden lg:block absolute top-1/2 -translate-y-1/2 right-[10%] w-[500px] h-[500px] lg:w-[600px] lg:h-[600px] overflow-hidden">
             <div className="relative w-full h-full" style={{ transform: 'scale(1.1)' }}>              <iframe 
                 src='https://my.spline.design/keyboard-jJ6PwzuJmsnLNAU8oA5nChzs/?embedMode=1&hideControls=true&hideUI=true&preload=1&hideSplinePromo=true&hideVersionInfo=true&hideBlur=true&disablePopup=true' 
                 frameBorder='0' 
@@ -219,27 +219,27 @@ const LandingPage: React.FC = () => {
         </div>
 
         {/* Floating Elements */}
-        <div className="absolute top-20 left-10 opacity-20 dark:opacity-10">
+        <div className="hidden md:block absolute top-20 left-10 opacity-20 dark:opacity-10">
           <MessageSquare className="h-16 w-16 text-orange-500 animate-pulse" />
         </div>
-        <div className="absolute bottom-20 right-10 opacity-20 dark:opacity-10">
+        <div className="hidden md:block absolute bottom-20 right-10 opacity-20 dark:opacity-10">
           <Brain className="h-20 w-20 text-amber-500 animate-pulse" />
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20">
+      <section id="features" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Powerful Features for Smarter Analysis
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Everything you need to understand public opinion and sentiment from Reddit discussions
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
               <div className="bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/20 dark:to-amber-900/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
                 <Brain className="h-8 w-8 text-orange-600 dark:text-orange-400" />
@@ -304,18 +304,18 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20">
+      <section id="how-it-works" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               How It Works
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Simple, powerful, and effective in just three steps
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
             <div className="text-center">
               <div className="bg-gradient-to-r from-orange-600 to-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">
                 1
@@ -350,18 +350,18 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20">
+      <section id="pricing" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Choose the plan that fits your needs. All plans include full access to our AI-powered analysis tools.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {/* Free Plan */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="text-center mb-8">
@@ -398,7 +398,7 @@ const LandingPage: React.FC = () => {
             </div>
             
             {/* Pro Plan */}
-            <div className="bg-gradient-to-br from-orange-600 to-amber-600 rounded-2xl p-8 shadow-xl transform scale-105 relative">
+            <div className="bg-gradient-to-br from-orange-600 to-amber-600 rounded-2xl p-8 shadow-xl transform md:scale-105 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-white text-orange-600 px-4 py-1 rounded-full text-sm font-semibold">Most Popular</span>
               </div>
@@ -487,13 +487,13 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20">
+      <section id="faq" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Everything you need to know about Reddit TLDR
             </p>
           </div>
@@ -538,12 +538,12 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-orange-600 to-amber-600">
+      <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-orange-600 to-amber-600">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
             Ready to Get Started?
           </h2>
-          <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
             Join thousands of users who are already using Reddit TLDR to understand public opinion and sentiment.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -564,9 +564,9 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-8 sm:py-12">
         <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-4">
                 <svg className="h-8 w-8 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
@@ -610,9 +610,9 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <div className="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-gray-400">&copy; 2024 Reddit TLDR. All rights reserved.</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
+            <div className="flex space-x-6">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy</a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Terms</a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Security</a>

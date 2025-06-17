@@ -32,16 +32,16 @@ const Summary: React.FC<SummaryProps> = ({
   const totalPosts = Object.values(sentimentCounts).reduce((sum, count) => sum + count, 0);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mx-6 mt-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 mx-4 sm:mx-6 mt-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
       <div className="flex items-center space-x-3 mb-6">
         <BarChart3 className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Analysis Summary</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Analysis Summary</h2>
       </div>
 
       {/* Sentiment Distribution */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Sentiment Distribution</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Sentiment Distribution</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {Object.entries(sentimentCounts).map(([sentiment, count]) => {
             const percentage = totalPosts > 0 ? (count / totalPosts) * 100 : 0;
             const colors = {
@@ -54,10 +54,10 @@ const Summary: React.FC<SummaryProps> = ({
             const colorClasses = restColors.join(' ');
 
             return (
-              <div key={sentiment} className={`p-4 rounded-lg border ${colorClasses}`}>
+              <div key={sentiment} className={`p-3 sm:p-4 rounded-lg border ${colorClasses}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold capitalize">{sentiment}</span>
-                  <span className="text-lg font-bold">{count}</span>
+                  <span className="text-xs sm:text-sm font-semibold capitalize">{sentiment}</span>
+                  <span className="text-base sm:text-lg font-bold">{count}</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
@@ -65,7 +65,7 @@ const Summary: React.FC<SummaryProps> = ({
                     style={{ width: `${percentage}%` }}
                   ></div>
                 </div>
-                <p className="text-xs mt-1">{percentage.toFixed(1)}%</p>
+                <p className="text-xs mt-1 text-center sm:text-left">{percentage.toFixed(1)}%</p>
               </div>
             );
           })}
@@ -75,15 +75,15 @@ const Summary: React.FC<SummaryProps> = ({
       {/* Aggregated Insights */}
       {aggregatedResult && (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6">Key Insights about "{keyword}"</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6">Key Insights about "{keyword}"</h3>
           
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Positive Summary */}
             {aggregatedResult.positives.length > 0 && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 sm:p-6">
                 <div className="flex items-center space-x-2 mb-4">
                   <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  <h4 className="text-lg font-semibold text-green-800 dark:text-green-400">Positive Aspects</h4>
+                  <h4 className="text-base sm:text-lg font-semibold text-green-800 dark:text-green-400">Positive Aspects</h4>
                 </div>
                 <ul className="space-y-3">
                   {aggregatedResult.positives.map((positive, index) => (
@@ -98,10 +98,10 @@ const Summary: React.FC<SummaryProps> = ({
 
             {/* Negative Summary */}
             {aggregatedResult.negatives.length > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 sm:p-6">
                 <div className="flex items-center space-x-2 mb-4">
                   <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
-                  <h4 className="text-lg font-semibold text-red-800 dark:text-red-400">Negative Aspects</h4>
+                  <h4 className="text-base sm:text-lg font-semibold text-red-800 dark:text-red-400">Negative Aspects</h4>
                 </div>
                 <ul className="space-y-3">
                   {aggregatedResult.negatives.map((negative, index) => (
@@ -118,27 +118,27 @@ const Summary: React.FC<SummaryProps> = ({
       )}
 
       {/* Performance Metrics */}
-      <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-6 transition-colors duration-300">
+      <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-4 sm:p-6 transition-colors duration-300">
         <div className="flex items-center space-x-2 mb-4">
           <Clock className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Performance Metrics</h4>
+          <h4 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">Performance Metrics</h4>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-center">
           <div>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{totalPosts}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Posts Analyzed</p>
+            <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">{totalPosts}</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Posts Analyzed</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatTime(dataRetrievalTime)}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Data Retrieval</p>
+            <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{formatTime(dataRetrievalTime)}</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Data Retrieval</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{formatTime(llmProcessingTime)}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">AI Processing</p>
+            <p className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{formatTime(llmProcessingTime)}</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">AI Processing</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{formatTime(dataRetrievalTime + llmProcessingTime)}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Time</p>
+            <p className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">{formatTime(dataRetrievalTime + llmProcessingTime)}</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Time</p>
           </div>
         </div>
       </div>

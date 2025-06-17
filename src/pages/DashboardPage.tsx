@@ -95,25 +95,26 @@ const DashboardPage: React.FC = () => {
       <Navigation />
       
       {/* Main Content */}
-      <div className="pt-24 pb-12 px-6">
+      <div className="pt-20 sm:pt-24 pb-12 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           {/* Welcome Section */}
           <div className="mb-8">
-            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-              <div className="flex items-center justify-between">
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center space-x-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <span>Welcome back, {userName}!</span>
-                    <Sparkles className="h-8 w-8 text-orange-500 animate-pulse" />
+                    <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500 animate-pulse mt-1 sm:mt-0" />
                   </h1>
-                  <p className="text-gray-600 dark:text-gray-300">
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
                     Here's how your brand reputation is performing today.
                   </p>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-left lg:text-right">
+                  <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     <Calendar className="h-4 w-4" />
-                    <span>Last updated: {currentTime}</span>
+                    <span className="hidden sm:inline">Last updated: {currentTime}</span>
+                    <span className="sm:hidden">Updated: {new Date().toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
@@ -121,7 +122,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <DashboardCard
               title="Reputation Score"
               value="78"
@@ -152,16 +153,16 @@ const DashboardPage: React.FC = () => {
 
           {/* AI Summary */}
           <div className="mb-8">
-            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="p-2 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-xl">
                   <Brain className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI Summary Insights</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">AI Summary Insights</h3>
               </div>
               
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/50">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
                   Your brand reputation has shown steady improvement over the past week, with a 5.2% increase in overall sentiment score. 
                   The launch of your new AI feature has generated significant positive buzz, particularly among productivity-focused users. 
                   However, there are some concerns about recent product updates affecting core functionality that should be addressed promptly.
@@ -171,7 +172,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Charts and Recent Mentions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-20 sm:mb-0">
             {/* Sentiment Chart */}
             <SentimentChart 
               data={sentimentData}
