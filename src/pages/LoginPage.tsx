@@ -55,7 +55,7 @@ const LoginPage: React.FC = () => {
       if (error) {
         setError(error.message);
       } else {
-        navigate(from, { replace: true });
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       setError('An unexpected error occurred');

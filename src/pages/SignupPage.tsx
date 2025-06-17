@@ -84,7 +84,7 @@ const SignupPage: React.FC = () => {
       } else {
         setSuccess(true);
         setTimeout(() => {
-          navigate('/app');
+          navigate('/dashboard');
         }, 2000);
       }
     } catch (err) {

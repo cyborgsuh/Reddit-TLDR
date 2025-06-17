@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import DashboardPage from './pages/DashboardPage';
 import AppPage from './pages/AppPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -25,6 +26,15 @@ function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             
             {/* Protected Routes */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            
             <Route 
               path="/app" 
               element={
@@ -54,7 +64,7 @@ function App() {
             />
             
             {/* Demo Route - Public for now */}
-            <Route path="/demo" element={<Navigate to="/app" replace />} />
+            <Route path="/demo" element={<Navigate to="/dashboard" replace />} />
             
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/" replace />} />
