@@ -139,33 +139,27 @@ const Navigation: React.FC = () => {
                 aria-label="Toggle dark mode"
               >
                 <div className="relative">
-                  <Sun className={`h-4 w-4 text-orange-500 transition-all duration-500 ease-out ${
+                  <Sun className={`${isScrolled ? 'h-5 w-5' : 'h-4 w-4'} text-orange-500 transition-all duration-500 ease-out ${
                     isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
-                  }`} />
-                  <Moon className={`absolute inset-0 h-4 w-4 text-orange-400 transition-all duration-500 ease-out ${
+                  <Moon className={`absolute inset-0 ${isScrolled ? 'h-5 w-5' : 'h-4 w-4'} text-orange-400 transition-all duration-500 ease-out ${
                     isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
                   }`} />
                 </div>
               </button>
 
-              {/* User Info */}
-              <div className={`flex items-center space-x-2 px-3 py-2 bg-gray-100/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full transition-all duration-[1500ms] ease-out ${isScrolled ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
-                <User className={`text-gray-600 dark:text-gray-300 transition-all duration-[1500ms] ease-out ${isScrolled ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                {!isScrolled && (
-                  <span className="text-sm text-gray-700 dark:text-gray-200 transition-opacity duration-[1500ms]">
-                    {user?.email?.split('@')[0] || 'User'}
-                  </span>
-                )}
+              {/* User Profile Icon */}
+              <div className={`flex items-center justify-center bg-gray-100/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full transition-all duration-[1500ms] ease-out ${isScrolled ? 'p-2' : 'p-2'}`}>
+                <User className={`text-gray-600 dark:text-gray-300 transition-all duration-[1500ms] ease-out ${isScrolled ? 'h-5 w-5' : 'h-4 w-4'}`} />
               </div>
             
               {/* Sign Out Button */}
               <button
                 onClick={handleSignOut}
-                className={`flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-[1500ms] ease-out transform hover:scale-105 ${isScrolled ? 'px-2 py-1.5' : 'px-3 py-2'}`}
+                className={`flex items-center text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-[1500ms] ease-out transform hover:scale-105 ${isScrolled ? 'space-x-2 px-3 py-2' : 'px-2 py-2'}`}
               >
-                <LogOut className={`transition-all duration-[1500ms] ease-out ${isScrolled ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                {!isScrolled && (
-                  <span className="text-sm transition-opacity duration-[1500ms]">Sign Out</span>
+                <LogOut className={`transition-all duration-[1500ms] ease-out ${isScrolled ? 'h-5 w-5' : 'h-4 w-4'}`} />
+                {isScrolled && (
+                  <span className="text-sm font-medium transition-opacity duration-[1500ms]">Sign Out</span>
                 )}
               </button>
             </div>
