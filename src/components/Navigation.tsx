@@ -156,12 +156,9 @@ const Navigation: React.FC = () => {
               {/* Sign Out Button */}
               <button
                 onClick={handleSignOut}
-                className={`flex items-center text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-[1500ms] ease-out transform hover:scale-105 ${isScrolled ? 'space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2' : 'px-1.5 sm:px-2 py-1.5 sm:py-2'}`}
+                className={`flex items-center text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-[1500ms] ease-out transform hover:scale-105 px-1.5 sm:px-2 py-1.5 sm:py-2`}
               >
                 <LogOut className={`transition-all duration-[1500ms] ease-out ${isScrolled ? 'h-4 w-4 sm:h-5 sm:w-5' : 'h-4 w-4'}`} />
-                {isScrolled && (
-                  <span className="text-xs sm:text-sm font-medium transition-opacity duration-[1500ms] hidden sm:inline">Sign Out</span>
-                )}
               </button>
             </div>
           </div>
@@ -193,13 +190,6 @@ const Navigation: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Desktop scroll indicator */}
-      {isScrolled && (
-        <div className="hidden md:block absolute -bottom-2 left-1/2 transform -translate-x-1/2 transition-opacity duration-[1500ms]">
-          <div className="w-1 h-1 bg-orange-600 dark:bg-orange-400 rounded-full animate-pulse"></div>
-        </div>
-      )}
     </header>
   );
 };
