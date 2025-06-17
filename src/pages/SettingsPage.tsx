@@ -233,11 +233,11 @@ const SettingsPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link 
-                to="/app"
+                to="/dashboard"
                 className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
-                <span>Back to App</span>
+                <span>Back</span>
               </Link>
               <div className="flex items-center space-x-3">
                 <Settings className="h-6 w-6 text-orange-600 dark:text-orange-400" />
