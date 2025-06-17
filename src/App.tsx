@@ -12,6 +12,7 @@ import DashboardPage from './pages/DashboardPage';
 import AppPage from './pages/AppPage';
 import SettingsPage from './pages/SettingsPage';
 import InsightsPage from './pages/InsightsPage';
+import MentionsPage from './pages/MentionsPage';
 
 function App() {
   return (
@@ -41,6 +42,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AppPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/mentions" 
+              element={
+                <ProtectedRoute>
+                  <MentionsPage />
                 </ProtectedRoute>
               } 
             />

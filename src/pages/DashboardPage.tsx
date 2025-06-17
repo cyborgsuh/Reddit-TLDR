@@ -91,8 +91,7 @@ const DashboardPage: React.FC = () => {
   ];
 
   const handleViewAllMentions = () => {
-    // Navigate to mentions feed page
-    console.log('Navigate to mentions feed');
+    // This is now handled by the Link in RecentMentions component
   };
 
   return (
@@ -187,7 +186,6 @@ const DashboardPage: React.FC = () => {
             {/* Recent Mentions */}
             <RecentMentions 
               mentions={recentMentions}
-              onViewAll={handleViewAllMentions}
             />
           </div>
         </div>

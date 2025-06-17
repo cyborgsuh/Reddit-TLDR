@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { MessageSquare, TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
 
 interface Mention {
@@ -13,10 +14,9 @@ interface Mention {
 
 interface RecentMentionsProps {
   mentions: Mention[];
-  onViewAll: () => void;
 }
 
-const RecentMentions: React.FC<RecentMentionsProps> = ({ mentions, onViewAll }) => {
+const RecentMentions: React.FC<RecentMentionsProps> = ({ mentions }) => {
   const getSentimentIcon = (sentiment: string) => {
     switch (sentiment) {
       case 'positive':
@@ -47,13 +47,13 @@ const RecentMentions: React.FC<RecentMentionsProps> = ({ mentions, onViewAll }) 
     <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Mentions</h3>
-        <button
-          onClick={onViewAll}
+        <Link
+          to="/mentions"
           className="flex items-center space-x-1 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors text-sm font-medium"
         >
           <span>View all</span>
           <ExternalLink className="h-4 w-4" />
-        </button>
+        </Link>
       </div>
       
       <div className="space-y-4">

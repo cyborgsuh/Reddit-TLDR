@@ -70,6 +70,7 @@ const Navigation: React.FC = () => {
   const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/app', icon: MessageSquare, label: 'TLDR' },
+    { path: '/mentions', icon: MessageSquare, label: 'Mentions' },
     { path: '/insights', icon: Brain, label: 'AI Insights' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
