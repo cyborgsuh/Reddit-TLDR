@@ -61,6 +61,9 @@ const SettingsPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo(0, 0);
+    
     if (isDark) {
       document.documentElement.classList.add('dark');
     } else {

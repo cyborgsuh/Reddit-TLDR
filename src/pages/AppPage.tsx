@@ -185,10 +185,9 @@ const AppPage: React.FC = () => {
       {/* Use Navigation Component */}
       <Navigation />
 
-      {/* Main Content */}
-      <div className="pt-20 sm:pt-24 pb-12 sm:pb-20 px-4 sm:px-6">
+      {/* Page Header */}
+      <div className="pt-20 sm:pt-24 pb-8 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
           <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
               <div>
@@ -214,8 +213,12 @@ const AppPage: React.FC = () => {
               </div>
             </div>
           </div>
-          
-          {/* Reddit Auth Section */}
+        </div>
+      </div>
+      
+      {/* Reddit Auth Section */}
+      <div className="px-4 sm:px-6 mb-6">
+        <div className="max-w-7xl mx-auto">
           <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               <div>
@@ -237,32 +240,33 @@ const AppPage: React.FC = () => {
               </div>
             </div>
           </div>
-          
-          {/* Search Form */}
-          <SearchForm onSearch={handleSearch} isAnalyzing={isAnalyzing} />
-
-          {isAnalyzing && (
-            <LoadingState 
-              stage={currentStage} 
-              currentPost={currentPost} 
-              totalPosts={totalPosts} 
-            />
-          )}
-
-          {analysisResults.length > 0 && (
-            <StackedResults analysisResults={analysisResults} />
-          )}
-
-          {!isAnalyzing && analysisResults.length > 0 && (
-            <Summary
-              aggregatedResult={aggregatedResult}
-              sentimentCounts={sentimentCounts}
-              dataRetrievalTime={dataRetrievalTime}
-              llmProcessingTime={llmProcessingTime}
-              keyword={keyword}
-            />
-          )}
         </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-6 mb-20 sm:mb-0">
+        <SearchForm onSearch={handleSearch} isAnalyzing={isAnalyzing} />
+
+        {isAnalyzing && (
+          <LoadingState 
+            stage={currentStage} 
+            currentPost={currentPost} 
+            totalPosts={totalPosts} 
+          />
+        )}
+
+        {analysisResults.length > 0 && (
+          <StackedResults analysisResults={analysisResults} />
+        )}
+
+        {!isAnalyzing && analysisResults.length > 0 && (
+          <Summary
+            aggregatedResult={aggregatedResult}
+            sentimentCounts={sentimentCounts}
+            dataRetrievalTime={dataRetrievalTime}
+            llmProcessingTime={llmProcessingTime}
+            keyword={keyword}
+          />
+        )}
       </div>
 
     </div>
