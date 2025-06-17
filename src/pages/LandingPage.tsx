@@ -134,7 +134,7 @@ const LandingPage: React.FC = () => {
                 {/* Auth Buttons */}
                 <Link 
                   to="/login" 
-                  className={`text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-800/60 ${isScrolled ? 'text-sm' : 'text-base'}`}
+                  className={`text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-800/60 text-base`}
                 >
                   Sign In
                 </Link>
