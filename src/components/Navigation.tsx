@@ -141,6 +141,7 @@ const Navigation: React.FC = () => {
                 <div className="relative">
                   <Sun className={`${isScrolled ? 'h-5 w-5' : 'h-4 w-4'} text-orange-500 transition-all duration-500 ease-out ${
                     isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+                  }`} />
                   <Moon className={`absolute inset-0 ${isScrolled ? 'h-5 w-5' : 'h-4 w-4'} text-orange-400 transition-all duration-500 ease-out ${
                     isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
                   }`} />
