@@ -6,7 +6,9 @@ import {
   Brain, 
   Settings, 
   LogOut,
-  User
+  User,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -14,16 +16,36 @@ const Navigation: React.FC = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('darkMode') === 'true' || 
+             (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      setIsScrolled(scrollPosition > 250);
+      setIsScrolled(scrollPosition > 50); // Changed from 250 to 50 for earlier trigger
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', isDark.toString());
+  }, [isDark]);
+
+  const toggleDarkMode = () => {
+    setIsDark(!isDark);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -60,7 +82,7 @@ const Navigation: React.FC = () => {
               <svg className={`text-orange-600 dark:text-orange-400 transition-all duration-1000 ease-out ${isScrolled ? "h-6 w-6" : "h-8 w-8"}`} viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
               </svg>
-              <span className="cursor-default">Reddit TLDR</span>
+              <span className="cursor-default text-gray-900 dark:text-white transition-colors duration-1000">Reddit TLDR</span>
             </div>
           </div>
 
@@ -95,9 +117,26 @@ const Navigation: React.FC = () => {
             })}
           </nav>
 
-          {/* User Menu */}
+          {/* User Menu & Dark Mode Toggle */}
           <div className={`transition-all duration-1000 ease-out ${isScrolled ? "scale-90" : "scale-100"}`}>
             <div className="flex items-center space-x-3">
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-full bg-gray-100/60 dark:bg-gray-800/60 backdrop-blur-sm hover:bg-gray-200/60 dark:hover:bg-gray-700/60 transition-all duration-300 group ${isScrolled ? 'p-1.5' : 'p-2'}`}
+                aria-label="Toggle dark mode"
+              >
+                <div className="relative">
+                  <Sun className={`h-4 w-4 text-orange-500 transition-all duration-500 ease-out ${
+                    isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+                  }`} />
+                  <Moon className={`absolute inset-0 h-4 w-4 text-orange-400 transition-all duration-500 ease-out ${
+                    isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
+                  }`} />
+                </div>
+              </button>
+
+              {/* User Info */}
               <div className={`flex items-center space-x-2 px-3 py-2 bg-gray-100/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full transition-all duration-1000 ease-out ${isScrolled ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
                 <User className={`text-gray-600 dark:text-gray-300 transition-all duration-1000 ease-out ${isScrolled ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
                 {!isScrolled && (
@@ -107,6 +146,7 @@ const Navigation: React.FC = () => {
                 )}
               </div>
             
+              {/* Sign Out Button */}
               <button
                 onClick={handleSignOut}
                 className={`flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-1000 ease-out transform hover:scale-105 ${isScrolled ? 'px-2 py-1.5' : 'px-3 py-2'}`}
