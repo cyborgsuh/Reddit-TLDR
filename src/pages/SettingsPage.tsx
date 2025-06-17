@@ -693,19 +693,3 @@ const SettingsPage: React.FC = () => {
 };
 
 export default SettingsPage;
-
-export default SettingsPage
-
-export default SettingsPage
-
-export default SettingsPage
-
-export default SettingsPage
-
-export default SettingsPage
-
-export default SettingsPage
-
-export default SettingsPage
-
-export default SettingsPage
