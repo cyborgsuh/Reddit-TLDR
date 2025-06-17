@@ -81,34 +81,66 @@ const LandingPage: React.FC = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-32">
+      <section className="relative min-h-screen flex items-center">
         <div className="container mx-auto px-6">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-              AI-Powered Insights from 
-              <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent"> Reddit Discussions</span>
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-              Skip the endless scrolling. Get instant sentiment analysis and key insights from Reddit discussions using advanced AI technology.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link 
-                to="/signup" 
-                className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
-              >
-                <span>Start Analyzing</span>
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link 
-                to="/demo" 
-                className="border-2 border-orange-600 dark:border-orange-400 text-orange-600 dark:text-orange-400 hover:bg-orange-600 hover:text-white dark:hover:bg-orange-400 dark:hover:text-gray-900 font-semibold px-8 py-4 rounded-lg transition-all duration-200"
-              >
-                View Demo
-              </Link>
+          {/* Content */}
+          <div className="relative z-10 max-w-2xl ml-[15%]">
+            <div>
+              <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+                AI-Powered Insights from 
+                <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent"> Reddit Discussions</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                Stop scrolling, smash the Reddit button 🔥 <br />and start analyzing
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link 
+                  to="/signup" 
+                  className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                >
+                  <span>Start Analyzing</span>
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <Link 
+                  to="/demo" 
+                  className="bg-white hover:bg-gray-50 text-orange-600 font-semibold px-8 py-4 rounded-lg transition-all duration-200"
+                >
+                  View Demo
+                </Link>
+              </div>
+            </div>
+          </div>          {/* 3D Model */}
+          <div className="absolute top-1/2 -translate-y-1/2 right-[10%] w-[500px] h-[500px] lg:w-[600px] lg:h-[600px] overflow-hidden">
+            <div className="relative w-full h-full" style={{ transform: 'scale(1.1)' }}>              <iframe 
+                src='https://my.spline.design/keyboard-jJ6PwzuJmsnLNAU8oA5nChzs/?embedMode=1&hideControls=true&hideUI=true&preload=1&hideSplinePromo=true&hideVersionInfo=true&hideBlur=true&disablePopup=true' 
+                frameBorder='0' 
+                width='100%'
+                height='100%'
+                title="3D Keyboard Model"
+                style={{ 
+                  pointerEvents: 'auto',
+                  transform: 'scale(1.2)',
+                  transformOrigin: 'center center',
+                  position: 'relative',
+                  zIndex: 1
+                }}
+                className="w-full h-full"
+              />
+              <div 
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '50px',
+                  background: 'linear-gradient(to top, rgba(255,255,255,0.8), transparent)',
+                  zIndex: 2
+                }}
+              />
             </div>
           </div>
         </div>
-        
+
         {/* Floating Elements */}
         <div className="absolute top-20 left-10 opacity-20 dark:opacity-10">
           <MessageSquare className="h-16 w-16 text-orange-500 animate-pulse" />
