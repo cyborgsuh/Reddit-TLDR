@@ -111,7 +111,16 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 mx-4 sm:mx-6 -mt-4 relative z-10 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
+    <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8 border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300 hover:shadow-xl">
+      <div className="mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Start Your Analysis
+        </h2>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+          Enter a search term to analyze Reddit sentiment and discover public opinion insights
+        </p>
+      </div>
+      
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="query" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">

@@ -32,7 +32,11 @@ const Summary: React.FC<SummaryProps> = ({
   const totalPosts = Object.values(sentimentCounts).reduce((sum, count) => sum + count, 0);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 mx-4 sm:mx-6 mt-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
+    <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8 mt-8 border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300 hover:shadow-xl">
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-amber-500/5 rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      
+      <div className="relative z-10">
       <div className="flex items-center space-x-3 mb-6">
         <BarChart3 className="h-6 w-6 text-orange-600 dark:text-orange-400" />
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Analysis Summary</h2>
@@ -118,7 +122,7 @@ const Summary: React.FC<SummaryProps> = ({
       )}
 
       {/* Performance Metrics */}
-      <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-4 sm:p-6 transition-colors duration-300">
+      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border border-gray-200/50 dark:border-gray-600/50 rounded-xl p-4 sm:p-6 transition-colors duration-300">
         <div className="flex items-center space-x-2 mb-4">
           <Clock className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           <h4 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">Performance Metrics</h4>
@@ -141,6 +145,7 @@ const Summary: React.FC<SummaryProps> = ({
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Time</p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

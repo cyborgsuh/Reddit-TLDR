@@ -36,7 +36,7 @@ const LoadingState: React.FC<LoadingStateProps> = ({ stage, currentPost, totalPo
   const { icon: Icon, title, description } = getStageInfo();
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mx-6 mt-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
+    <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl shadow-lg p-6 sm:p-8 mt-8 border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300">
       <div className="flex flex-col items-center text-center">
         <div className="mb-6 flex flex-col items-center">
           {/* 3D Boxes Animation */}
@@ -49,8 +49,8 @@ const LoadingState: React.FC<LoadingStateProps> = ({ stage, currentPost, totalPo
           <Icon className="h-8 w-8 text-orange-600 dark:text-orange-400" />
         </div>
         
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">{description}</p>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-4">{description}</p>
         
         {currentPost && totalPosts && (
           <div className="w-full max-w-md">
@@ -60,7 +60,7 @@ const LoadingState: React.FC<LoadingStateProps> = ({ stage, currentPost, totalPo
                 style={{ width: `${(currentPost / totalPosts) * 100}%` }}
               ></div>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{currentPost} of {totalPosts} posts analyzed</p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{currentPost} of {totalPosts} posts analyzed</p>
           </div>
         )}
       </div>
