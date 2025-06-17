@@ -141,6 +141,7 @@ const Navigation: React.FC = () => {
                 <div className="relative">
                   <Sun className={`${isScrolled ? 'h-5 w-5' : 'h-4 w-4'} text-orange-500 transition-all duration-500 ease-out ${
                     isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+                  }`} />
                   <Moon className={`absolute inset-0 ${isScrolled ? 'h-5 w-5' : 'h-4 w-4'} text-orange-400 transition-all duration-500 ease-out ${
                     isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
                   }`} />
@@ -158,6 +159,9 @@ const Navigation: React.FC = () => {
                 className={`flex items-center text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-[1500ms] ease-out transform hover:scale-105 ${isScrolled ? 'space-x-2 px-3 py-2' : 'px-2 py-2'}`}
               >
                 <LogOut className={`transition-all duration-[1500ms] ease-out ${isScrolled ? 'h-5 w-5' : 'h-4 w-4'}`} />
+                {isScrolled && (
+                  <span className="text-sm font-medium transition-opacity duration-[1500ms]">Sign Out</span>
+                )}
               </button>
             </div>
           </div>
