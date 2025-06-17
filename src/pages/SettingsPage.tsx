@@ -350,6 +350,98 @@ const SettingsPage: React.FC = () => {
         )}
 
         <div className="space-y-8">
+          {/* Account Information - Moved to top */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-6">
+              <User className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Account Information</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Email Address Card */}
+              <div className="group">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="p-2 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-lg">
+                      <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Email Address</h3>
+                    </div>
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white break-all">
+                    {user?.email}
+                  </div>
+                  <div className="mt-2 flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">Verified</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Created Card */}
+              <div className="group">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="p-2 bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 rounded-lg">
+                      <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4v10m6-10v10m-6-4h6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Member Since</h3>
+                    </div>
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : 'Unknown'}
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    {user?.created_at ? `${Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))} days ago` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Stats */}
+            <div className="mt-8 p-6 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200/50 dark:border-orange-800/50">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                <svg className="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z" />
+                </svg>
+                <span>Account Overview</span>
+              </h4>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {geminiKeyStatus.hasKey ? '1' : '0'}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">API Keys</div>
+                </div>
+                
+                <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {redditAuthState.isAuthenticated ? '1' : '0'}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Connected Accounts</div>
+                </div>
+                
+                <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {userSettings.savedKeywords.length}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Saved Keywords</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* General Preferences Section */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-6">
@@ -654,108 +746,6 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Account Information */}
-          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700 relative overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-5 dark:opacity-10">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full transform translate-x-16 -translate-y-16"></div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-orange-400 to-yellow-400 rounded-full transform -translate-x-12 translate-y-12"></div>
-            </div>
-            
-            <div className="relative z-10">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="p-3 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-xl">
-                <User className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Account Information</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Email Address Card */}
-              <div className="group">
-                <div className="bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-600/50 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="p-2 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-lg">
-                      <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Email Address</h3>
-                    </div>
-                  </div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white break-all">
-                    {user?.email}
-                  </div>
-                  <div className="mt-2 flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">Verified</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Account Created Card */}
-              <div className="group">
-                <div className="bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-600/50 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="p-2 bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 rounded-lg">
-                      <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4v10m6-10v10m-6-4h6" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Member Since</h3>
-                    </div>
-                  </div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    }) : 'Unknown'}
-                  </div>
-                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    {user?.created_at ? `${Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))} days ago` : ''}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Account Stats */}
-            <div className="mt-8 p-6 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200/50 dark:border-orange-800/50">
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-                <svg className="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z" />
-                </svg>
-                <span>Account Overview</span>
-              </h4>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {geminiKeyStatus.hasKey ? '1' : '0'}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">API Keys</div>
-                </div>
-                
-                <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {redditAuthState.isAuthenticated ? '1' : '0'}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Connected Accounts</div>
-                </div>
-                
-                <div className="text-center p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {userSettings.savedKeywords.length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Saved Keywords</div>
-                </div>
-              </div>
-            </div>
             </div>
           </div>
         </div>
