@@ -13,12 +13,12 @@ import { useAuth } from '../contexts/AuthContext';
 const Navigation: React.FC = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
-  const [scrolled, setScrolled] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 20;
-      setScrolled(isScrolled);
+      const scrollPosition = window.scrollY;
+      setIsScrolled(scrollPosition > 250);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -41,28 +41,34 @@ const Navigation: React.FC = () => {
   ];
 
   return (
-    <nav className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ease-out ${
-      scrolled 
-        ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 px-6 py-3 rounded-full' 
-        : 'bg-transparent px-8 py-4 rounded-2xl'
-    }`}>
-      <div className="flex items-center space-x-6">
+    <header className="fixed top-6 inset-x-0 flex justify-center z-50">
+      <div
+        className={`transition-all duration-1000 ease-out backdrop-blur-md border rounded-full ${
+          isScrolled
+            ? "bg-white/40 dark:bg-gray-950/40 px-10 py-3 mx-4 border-gray-200/20 dark:border-gray-800/20 shadow-xl shadow-black/5 dark:shadow-white/5 w-fit"
+            : "bg-transparent dark:bg-transparent px-16 py-4 mx-4 border-gray-200/10 dark:border-gray-800/10 shadow-none w-fit"
+        }`}
+      >
+        <div
+          className={`flex items-center justify-between transition-all duration-1000 ease-out ${
+            isScrolled ? "gap-8" : "gap-12"
+          }`}
+        >
         {/* Logo */}
-        <div className="flex items-center space-x-2">
+        <div className={`font-medium transition-all duration-1000 ease-out ${isScrolled ? "text-lg" : "text-xl"}`}>
           <div className="relative">
             <svg className="h-8 w-8 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
             </svg>
           </div>
-          {!scrolled && (
-            <span className="text-xl font-bold text-gray-900 dark:text-white transition-opacity duration-300">
-              Reddit TLDR
-            </span>
-          )}
         </div>
 
         {/* Navigation Items */}
-        <div className="flex items-center space-x-1">
+        <nav
+          className={`hidden md:flex transition-all duration-1000 ease-out ${
+            isScrolled ? "gap-6 text-base" : "gap-8 text-base"
+          }`}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -71,51 +77,50 @@ const Navigation: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`group relative flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105 ${
+                className={`hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-300 relative group ${
                   isActive
-                    ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-500/10'
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-gray-600 dark:text-gray-300'
                 }`}
               >
-                <Icon className="h-5 w-5" />
-                {!scrolled && (
-                  <span className="text-sm font-medium transition-opacity duration-300">
-                    {item.label}
-                  </span>
-                )}
+                {item.label}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-600 dark:bg-orange-400 transition-all duration-300 group-hover:w-full"></span>
                 
                 {/* Active indicator */}
                 {isActive && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 rounded-full animate-pulse" />
+                  <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-600 dark:bg-orange-400"></span>
                 )}
               </Link>
             );
           })}
-        </div>
+        </nav>
 
         {/* User Menu */}
-        <div className="flex items-center space-x-3 pl-4 border-l border-gray-200/50 dark:border-gray-700/50">
-          <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-full">
+        <div className={`transition-all duration-1000 ease-out ${isScrolled ? "scale-90" : "scale-100"}`}>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-full">
             <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-            {!scrolled && (
+            {!isScrolled && (
               <span className="text-sm text-gray-700 dark:text-gray-300 transition-opacity duration-300">
                 {user?.email?.split('@')[0] || 'User'}
               </span>
             )}
-          </div>
+            </div>
           
-          <button
-            onClick={handleSignOut}
-            className="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-300 transform hover:scale-105"
-          >
-            <LogOut className="h-4 w-4" />
-            {!scrolled && (
+            <button
+              onClick={handleSignOut}
+              className="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-300 transform hover:scale-105"
+            >
+              <LogOut className="h-4 w-4" />
+              {!isScrolled && (
               <span className="text-sm transition-opacity duration-300">Sign Out</span>
-            )}
-          </button>
+              )}
+            </button>
+          </div>
+        </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 };
 
