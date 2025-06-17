@@ -140,7 +140,7 @@ const LandingPage: React.FC = () => {
                 </Link>
                 <Link 
                   to="/signup" 
-                  className={`bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 ${isScrolled ? 'px-4 py-2 text-sm' : 'px-6 py-2 text-base'}`}
+                  className={`bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 ${isScrolled ? 'px-5 py-2.5 text-base' : 'px-6 py-2 text-base'}`}
                 >
                   Get Started
                 </Link>
