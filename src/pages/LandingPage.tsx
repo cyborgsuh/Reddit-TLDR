@@ -34,13 +34,9 @@ const LandingPage: React.FC = () => {
     localStorage.setItem('darkMode', isDark.toString());
   }, [isDark]);
 
-  const toggleDarkMode = () => {
-    setIsDark(!isDark);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300">
-      <DarkModeToggle isDark={isDark} onToggle={toggleDarkMode} />
       
       {/* Navigation */}
       <nav className="relative z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">

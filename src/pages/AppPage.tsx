@@ -68,9 +68,6 @@ const AppPage: React.FC = () => {
     setRedditAuthState(redditAuth.getAuthState());
   }, []);
 
-  const toggleDarkMode = () => {
-    setIsDark(!isDark);
-  };
 
   const handleAuthStateChange = (newAuthState: RedditAuthState) => {
     setRedditAuthState(newAuthState);
@@ -196,7 +193,6 @@ const AppPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
-      <DarkModeToggle isDark={isDark} onToggle={toggleDarkMode} />
       
       {/* App Header with User Info */}
       <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
