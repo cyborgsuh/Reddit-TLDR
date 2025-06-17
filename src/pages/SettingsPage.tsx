@@ -12,11 +12,18 @@ import {
   User,
   LogOut,
   ArrowLeft,
-  Loader
+  Loader,
+  Sun,
+  Moon,
+  Hash,
+  Plus,
+  X,
+  MessageSquare,
+  Brain
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import DarkModeToggle from '../components/DarkModeToggle';
 import RedditAuthButton from '../components/RedditAuthButton';
+import ModelSelector from '../components/ModelSelector';
 import { RedditAuth } from '../utils/reddit-auth';
 import { RedditAuthState } from '../types';
 import { supabase } from '../lib/supabase';
@@ -25,6 +32,12 @@ interface GeminiKeyStatus {
   hasKey: boolean;
   status: 'not_set' | 'valid' | 'invalid' | 'testing';
   apiKey?: string;
+}
+
+interface UserSettings {
+  defaultPostsCount: number;
+  defaultModel: string;
+  savedKeywords: string[];
 }
 
 const SettingsPage: React.FC = () => {
@@ -56,6 +69,15 @@ const SettingsPage: React.FC = () => {
     username: null
   });
 
+  // User settings state
+  const [userSettings, setUserSettings] = useState<UserSettings>({
+    defaultPostsCount: 10,
+    defaultModel: 'gemini-2.0-flash',
+    savedKeywords: []
+  });
+  const [newKeyword, setNewKeyword] = useState('');
+  const [savingSettings, setSavingSettings] = useState(false);
+
   // Messages
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -79,8 +101,40 @@ const SettingsPage: React.FC = () => {
 
     // Load Gemini API key status
     loadGeminiKeyStatus();
+
+    // Load user settings from localStorage
+    loadUserSettings();
   }, []);
 
+  const loadUserSettings = () => {
+    try {
+      const savedSettings = localStorage.getItem('userSettings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        setUserSettings(prev => ({ ...prev, ...parsed }));
+      }
+    } catch (error) {
+      console.error('Error loading user settings:', error);
+    }
+  };
+
+  const saveUserSettings = (newSettings: Partial<UserSettings>) => {
+    try {
+      const updatedSettings = { ...userSettings, ...newSettings };
+      setUserSettings(updatedSettings);
+      localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
+      
+      setSuccessMessage('Settings saved successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error saving user settings:', error);
+      setErrorMessage('Failed to save settings');
+    }
+  };
+
+  const toggleDarkMode = () => {
+    setIsDark(!isDark);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -185,6 +239,23 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleAddKeyword = () => {
+    if (newKeyword.trim() && !userSettings.savedKeywords.includes(newKeyword.trim())) {
+      const updatedKeywords = [...userSettings.savedKeywords, newKeyword.trim()];
+      saveUserSettings({ savedKeywords: updatedKeywords });
+      setNewKeyword('');
+    }
+  };
+
+  const handleRemoveKeyword = (keywordToRemove: string) => {
+    const updatedKeywords = userSettings.savedKeywords.filter(keyword => keyword !== keywordToRemove);
+    saveUserSettings({ savedKeywords: updatedKeywords });
+  };
+
+  const handleDefaultSettingsChange = (field: keyof UserSettings, value: any) => {
+    saveUserSettings({ [field]: value });
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'valid':
@@ -279,6 +350,180 @@ const SettingsPage: React.FC = () => {
         )}
 
         <div className="space-y-8">
+          {/* General Preferences Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-6">
+              <Settings className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">General Preferences</h2>
+            </div>
+
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Customize your general application preferences and interface settings.
+            </p>
+
+            <div className="space-y-6">
+              {/* Dark Mode Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Dark Mode</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Toggle between light and dark theme
+                  </p>
+                </div>
+                <button
+                  onClick={toggleDarkMode}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
+                    isDark ? 'bg-orange-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isDark ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sun className={`h-3 w-3 text-yellow-500 transition-opacity ${isDark ? 'opacity-0' : 'opacity-100'}`} />
+                    <Moon className={`h-3 w-3 text-gray-300 transition-opacity absolute ${isDark ? 'opacity-100' : 'opacity-0'}`} />
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Saved Keywords Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-6">
+              <Hash className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Saved Keywords</h2>
+            </div>
+
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Save frequently used search terms for quick access during analysis.
+            </p>
+
+            {/* Add Keyword Input */}
+            <div className="space-y-4 mb-6">
+              <div className="flex space-x-3">
+                <input
+                  type="text"
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddKeyword()}
+                  placeholder="Enter a keyword to save..."
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
+                />
+                <button
+                  onClick={handleAddKeyword}
+                  disabled={!newKeyword.trim() || userSettings.savedKeywords.includes(newKeyword.trim())}
+                  className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                    !newKeyword.trim() || userSettings.savedKeywords.includes(newKeyword.trim())
+                      ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
+                      : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
+                  }`}
+                >
+                  <Plus className="h-5 w-5" />
+                  <span>Add</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Keywords List */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                Your Saved Keywords ({userSettings.savedKeywords.length})
+              </h3>
+              
+              {userSettings.savedKeywords.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Hash className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No saved keywords yet. Add some to get started!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {userSettings.savedKeywords.map((keyword, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <span className="text-gray-900 dark:text-white font-medium truncate">
+                        {keyword}
+                      </span>
+                      <button
+                        onClick={() => handleRemoveKeyword(keyword)}
+                        className="ml-2 p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Default Analysis Settings Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-6">
+              <Brain className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Default Analysis Settings</h2>
+            </div>
+
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Set your preferred default values for new analyses to speed up your workflow.
+            </p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Default Posts Count */}
+              <div>
+                <label htmlFor="defaultPosts" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <MessageSquare className="inline h-4 w-4 mr-1" />
+                  Default Posts Count
+                </label>
+                <input
+                  type="number"
+                  id="defaultPosts"
+                  min="1"
+                  max="100"
+                  value={userSettings.defaultPostsCount}
+                  onChange={(e) => handleDefaultSettingsChange('defaultPostsCount', parseInt(e.target.value) || 10)}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Number of posts to analyze by default (1-100)
+                </p>
+              </div>
+
+              {/* Default AI Model */}
+              <div>
+                <ModelSelector
+                  selectedModel={userSettings.defaultModel}
+                  onModelChange={(model) => handleDefaultSettingsChange('defaultModel', model)}
+                  disabled={false}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Your preferred AI model for new analyses
+                </p>
+              </div>
+            </div>
+
+            {/* Settings Summary */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200/50 dark:border-orange-800/50">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Current Defaults</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Posts per analysis:</span>
+                  <span className="ml-2 font-medium text-gray-900 dark:text-white">{userSettings.defaultPostsCount}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">AI Model:</span>
+                  <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                    {userSettings.defaultModel.replace('gemini-', 'Gemini ')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Gemini API Key Section */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-6">
