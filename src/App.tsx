@@ -11,6 +11,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import AppPage from './pages/AppPage';
 import SettingsPage from './pages/SettingsPage';
+import InsightsPage from './pages/InsightsPage';
 
 function App() {
   return (
@@ -40,6 +41,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AppPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/insights" 
+              element={
+                <ProtectedRoute>
+                  <InsightsPage />
                 </ProtectedRoute>
               } 
             />
