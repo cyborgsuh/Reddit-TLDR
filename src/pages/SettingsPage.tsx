@@ -19,12 +19,12 @@ import {
   Plus,
   X,
   MessageSquare,
-  Brain
+  Brain,
+  Search
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import RedditAuthButton from '../components/RedditAuthButton';
 import ModelSelector from '../components/ModelSelector';
-import { useKeywordManagement } from '../hooks/useKeywordManagement';
 import { RedditAuth } from '../utils/reddit-auth';
 import { RedditAuthState } from '../types';
 import { supabase } from '../lib/supabase';
@@ -43,16 +43,6 @@ interface UserSettings {
 
 const SettingsPage: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { 
-    keywords, 
-    loading: keywordsLoading, 
-    error: keywordsError, 
-    addKeyword, 
-    removeKeyword, 
-    toggleKeyword,
-    updateFrequency,
-    triggerManualSearch 
-  } = useKeywordManagement();
   
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -95,6 +85,9 @@ const SettingsPage: React.FC = () => {
   const [newKeywordFrequency, setNewKeywordFrequency] = useState(24);
   const [addingKeyword, setAddingKeyword] = useState(false);
   const [triggeringSearch, setTriggeringSearch] = useState(false);
+  const [keywords, setKeywords] = useState<any[]>([]);
+  const [keywordsLoading, setKeywordsLoading] = useState(true);
+  const [keywordsError, setKeywordsError] = useState<string | null>(null);
 
   // Messages
   const [successMessage, setSuccessMessage] = useState('');
@@ -122,7 +115,33 @@ const SettingsPage: React.FC = () => {
 
     // Load user settings from localStorage
     loadUserSettings();
+
+    // Load keywords
+    loadKeywords();
   }, []);
+
+  const loadKeywords = async () => {
+    try {
+      setKeywordsLoading(true);
+      setKeywordsError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('keyword_searches')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      setKeywords(data || []);
+    } catch (err) {
+      console.error('Error fetching keywords:', err);
+      setKeywordsError(err instanceof Error ? err.message : 'Failed to fetch keywords');
+    } finally {
+      setKeywordsLoading(false);
+    }
+  };
 
   const loadUserSettings = () => {
     try {
@@ -320,33 +339,108 @@ const SettingsPage: React.FC = () => {
     }
 
     setAddingKeyword(true);
-    const success = await addKeyword(newMonitorKeyword.trim(), newKeywordFrequency);
     
-    if (success) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error: insertError } = await supabase
+        .from('keyword_searches')
+        .insert({
+          user_id: user.id,
+          keyword: newMonitorKeyword.trim(),
+          search_frequency_hours: newKeywordFrequency,
+          next_search_at: new Date().toISOString()
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      await loadKeywords();
       setNewMonitorKeyword('');
       setNewKeywordFrequency(24);
       setSuccessMessage('Keyword added for monitoring!');
       setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Error adding keyword:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to add keyword');
     }
+    
     setAddingKeyword(false);
   };
 
   const handleRemoveMonitorKeyword = async (keywordId: string) => {
-    const success = await removeKeyword(keywordId);
-    if (success) {
+    try {
+      const { error: deleteError } = await supabase
+        .from('keyword_searches')
+        .delete()
+        .eq('id', keywordId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      await loadKeywords();
       setSuccessMessage('Keyword removed from monitoring');
       setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Error removing keyword:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to remove keyword');
+    }
+  };
+
+  const toggleKeyword = async (keywordId: string, isActive: boolean) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('keyword_searches')
+        .update({ is_active: isActive })
+        .eq('id', keywordId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      await loadKeywords();
+    } catch (err) {
+      console.error('Error toggling keyword:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to toggle keyword');
     }
   };
 
   const handleTriggerSearch = async () => {
     setTriggeringSearch(true);
-    const success = await triggerManualSearch();
     
-    if (success) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/keyword-monitor`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to trigger search: ${response.statusText}`);
+      }
+
+      await loadKeywords();
       setSuccessMessage('Manual search triggered! Check back in a few minutes for new mentions.');
       setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err) {
+      console.error('Error triggering search:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to trigger search');
     }
+    
     setTriggeringSearch(false);
   };
 

@@ -35,26 +35,34 @@ const AIChatbot: React.FC = () => {
     const lowerMessage = userMessage.toLowerCase();
     
     if (lowerMessage.includes('sentiment') || lowerMessage.includes('score')) {
-      return "Based on your current data, your brand sentiment is at 78% positive, which is excellent! Your AI integration launch has been particularly well-received. I recommend capitalizing on this momentum by creating more content around your AI features.";
+      return "Based on your current monitoring data, I can see your brand sentiment trends across all tracked keywords. Your positive sentiment ratio varies by keyword, with some showing strong performance while others may need attention. Would you like me to analyze specific keywords or time periods?";
     }
     
     if (lowerMessage.includes('competitor') || lowerMessage.includes('competition')) {
-      return "Your main competitors are performing at 72-81 points compared to your 78. You're in a strong middle position. I suggest focusing on your unique AI capabilities to differentiate further from the competition.";
+      return "I can help you understand your competitive position based on mention volume and sentiment analysis. While I don't have direct competitor data, I can analyze how your brand performs relative to industry benchmarks and suggest areas for improvement.";
     }
     
     if (lowerMessage.includes('improve') || lowerMessage.includes('recommendation')) {
-      return "Here are my top recommendations: 1) Address the product update issues mentioned in recent feedback, 2) Create case studies showcasing your AI integration success, 3) Engage more with industry analysts who've mentioned you neutrally. Would you like me to elaborate on any of these?";
+      return "Based on your mention analysis, here are some recommendations: 1) Monitor keywords showing negative sentiment trends more closely, 2) Engage with positive mentions to build community, 3) Set up additional keywords to capture more brand conversations. Would you like specific guidance on any of these areas?";
     }
     
     if (lowerMessage.includes('keyword') || lowerMessage.includes('mention')) {
-      return "Your top-performing keywords are 'AI integration' (+45.6% growth) and 'customer service' (+12.3% growth). I recommend creating more content around these themes to maintain momentum.";
+      return "I can see your keyword monitoring setup and mention patterns. Each keyword has different sentiment distributions and mention volumes. Would you like me to analyze performance for specific keywords or suggest new ones to monitor?";
     }
     
     if (lowerMessage.includes('reddit') || lowerMessage.includes('social')) {
-      return "Your Reddit presence shows strong engagement in productivity and tech communities. Consider participating more in r/artificial and r/productivity to reach your target audience where they're most active.";
+      return "Your Reddit monitoring is capturing mentions across various subreddits. I can help you understand which communities are most active in discussing your brand and suggest engagement strategies based on sentiment patterns.";
     }
     
-    return "That's an interesting question! Based on your brand data, I can help you with sentiment analysis, competitor insights, keyword performance, and strategic recommendations. Could you be more specific about what aspect of your brand you'd like to explore?";
+    if (lowerMessage.includes('dashboard') || lowerMessage.includes('data')) {
+      return "Your dashboard shows real-time data from your keyword monitoring system. I can help you interpret reputation scores, sentiment trends, and mention patterns. What specific metrics would you like me to explain?";
+    }
+    
+    if (lowerMessage.includes('alert') || lowerMessage.includes('notification')) {
+      return "I can help you understand when to pay attention to your mentions. Look for sudden spikes in negative sentiment, unusual mention volumes, or new keywords emerging in conversations about your brand.";
+    }
+    
+    return "I'm here to help you understand your brand monitoring data! I can assist with sentiment analysis, keyword performance, mention trends, and strategic recommendations. What specific aspect of your brand reputation would you like to explore?";
   };
 
   const handleSendMessage = async () => {

@@ -57,7 +57,14 @@ const RecentMentions: React.FC<RecentMentionsProps> = ({ mentions }) => {
       </div>
       
       <div className="space-y-4">
-        {mentions.map((mention) => (
+        {mentions.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>No recent mentions found.</p>
+            <p className="text-sm mt-2">Start monitoring keywords to see mentions here.</p>
+          </div>
+        ) : (
+          mentions.map((mention) => (
           <div
             key={mention.id}
             className="group p-4 rounded-xl bg-gray-50/50 dark:bg-gray-700/50 hover:bg-gray-100/50 dark:hover:bg-gray-600/50 transition-all duration-200 border border-gray-200/30 dark:border-gray-600/30"
@@ -96,7 +103,8 @@ const RecentMentions: React.FC<RecentMentionsProps> = ({ mentions }) => {
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
