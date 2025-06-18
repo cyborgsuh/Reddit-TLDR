@@ -125,9 +125,17 @@ const SettingsPage: React.FC = () => {
       setKeywordsLoading(true);
       setKeywordsError(null);
 
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setKeywordsError('User not authenticated');
+        return;
+      }
+
       const { data, error: fetchError } = await supabase
         .from('keyword_searches')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (fetchError) {

@@ -83,11 +83,17 @@ const InsightsPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       // Fetch keyword insights from user mentions
       const { data: mentionsData, error: mentionsError } = await supabase
         .from('user_mentions')
         .select('keyword, sentiment')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .gte('mentioned_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Last 30 days
 
       if (mentionsError) {

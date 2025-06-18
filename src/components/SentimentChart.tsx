@@ -1,4 +1,5 @@
 import React from 'react';
+import { BarChart3 } from 'lucide-react';
 
 interface SentimentData {
   day: string;

@@ -106,6 +106,12 @@ const MentionsPage: React.FC = () => {
 
   const fetchMentions = async (pageNum: number = 1, append: boolean = false) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       if (pageNum === 1) {
         setIsLoading(true);
         setError(null);
@@ -135,7 +141,7 @@ const MentionsPage: React.FC = () => {
       let query = supabase
         .from('user_mentions')
         .select('*', { count: 'exact' })
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('mentioned_at', { ascending: false })
         .range((pageNum - 1) * ITEMS_PER_PAGE, pageNum * ITEMS_PER_PAGE - 1);
 
