@@ -70,7 +70,7 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthComplete }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-6">
       <div className={`max-w-md w-full p-8 rounded-2xl shadow-xl border ${getStatusColor()} transition-colors duration-300`}>
         <div className="text-center">
           <div className="mb-6 flex justify-center">

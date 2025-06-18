@@ -34,9 +34,6 @@ const ResetPasswordPage: React.FC = () => {
     localStorage.setItem('darkMode', isDark.toString());
   }, [isDark]);
 
-  const toggleDarkMode = () => {
-    setIsDark(!isDark);
-  };
 
   useEffect(() => {
     // Check if we have the required tokens in the URL
@@ -85,7 +82,7 @@ const ResetPasswordPage: React.FC = () => {
       } else {
         setSuccess(true);
         setTimeout(() => {
-          navigate('/app');
+          navigate('/dashboard');
         }, 2000);
       }
     } catch (err) {
@@ -97,7 +94,7 @@ const ResetPasswordPage: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700 text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
@@ -119,8 +116,7 @@ const ResetPasswordPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 flex items-center justify-center p-6">
-      <DarkModeToggle isDark={isDark} onToggle={toggleDarkMode} />
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300 flex items-center justify-center p-6">
       
       <div className="w-full max-w-md">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">

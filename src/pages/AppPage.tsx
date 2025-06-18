@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, User, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import Header from '../components/Header';
+import { User } from 'lucide-react';
+import Navigation from '../components/Navigation';
 import SearchForm from '../components/SearchForm';
 import LoadingState from '../components/LoadingState';
 import StackedResults from '../components/StackedResults';
 import Summary from '../components/Summary';
-import Footer from '../components/Footer';
-import DarkModeToggle from '../components/DarkModeToggle';
 import RedditAuthButton from '../components/RedditAuthButton';
 import AuthCallback from '../components/AuthCallback';
 import { searchReddit } from '../utils/reddit';
@@ -53,6 +50,11 @@ const AppPage: React.FC = () => {
     username: null
   });
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -68,10 +70,6 @@ const AppPage: React.FC = () => {
     setRedditAuthState(redditAuth.getAuthState());
   }, []);
 
-  const toggleDarkMode = () => {
-    setIsDark(!isDark);
-  };
-
   const handleAuthStateChange = (newAuthState: RedditAuthState) => {
     setRedditAuthState(newAuthState);
   };
@@ -83,14 +81,6 @@ const AppPage: React.FC = () => {
     }
     // Redirect back to main app
     window.location.href = '/app';
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
   };
 
   // Show auth callback component if on callback route
@@ -195,90 +185,98 @@ const AppPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
-      <DarkModeToggle isDark={isDark} onToggle={toggleDarkMode} />
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300">
       
-      {/* App Header with User Info */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <svg className="h-8 w-8 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
-              </svg>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Reddit TLDR</span>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">{user?.email}</span>
+      {/* Navigation Component */}
+      <Navigation />
+
+      {/* Main Content Container - This is crucial for scroll detection */}
+      <div className="pt-20 sm:pt-24 pb-12 sm:pb-20 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          
+          {/* Page Header */}
+          <div className="mb-8">
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                    <span>Reddit TLDR Analysis</span>
+                    <div className="flex items-center space-x-2 mt-1 sm:mt-0">
+                      <svg className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500 animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+                      </svg>
+                    </div>
+                  </h1>
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                    AI-powered sentiment analysis for Reddit discussions
+                  </p>
+                </div>
+                
+                <div className="text-left lg:text-right">
+                  <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">Signed in as: {user?.email}</span>
+                    <span className="sm:hidden">User: {user?.email?.split('@')[0]}</span>
+                  </div>
+                </div>
               </div>
-              <Link
-                to="/settings"
-                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-all duration-200"
-              >
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-200 dark:border-gray-600 rounded-lg transition-all duration-200"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
-              </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      <Header />
-      
-      {/* Reddit Auth Section */}
-      <div className="container mx-auto max-w-6xl px-6 -mt-2 mb-4">
-        <div className="flex justify-center">
-          <RedditAuthButton 
-            authState={redditAuthState} 
-            onAuthStateChange={handleAuthStateChange} 
-          />
-        </div>
-        {redditAuthState.isAuthenticated && (
-          <div className="text-center mt-2">
-            <p className="text-sm text-green-600 dark:text-green-400">
-              ✓ Higher rate limits enabled with Reddit authentication
-            </p>
+          
+          {/* Reddit Auth Section */}
+          <div className="mb-8">
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">Reddit Authentication</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Connect your Reddit account for higher rate limits and better performance
+                  </p>
+                </div>
+                <div className="flex flex-col items-start sm:items-end space-y-2">
+                  <RedditAuthButton 
+                    authState={redditAuthState} 
+                    onAuthStateChange={handleAuthStateChange} 
+                  />
+                  {redditAuthState.isAuthenticated && (
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      ✓ Higher rate limits enabled
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+          
+          {/* Search Form */}
+          <SearchForm onSearch={handleSearch} isAnalyzing={isAnalyzing} />
+
+          {/* Loading State */}
+          {isAnalyzing && (
+            <LoadingState 
+              stage={currentStage} 
+              currentPost={currentPost} 
+              totalPosts={totalPosts} 
+            />
+          )}
+
+          {/* Results */}
+          {analysisResults.length > 0 && (
+            <StackedResults analysisResults={analysisResults} />
+          )}
+
+          {/* Summary */}
+          {!isAnalyzing && analysisResults.length > 0 && (
+            <Summary
+              aggregatedResult={aggregatedResult}
+              sentimentCounts={sentimentCounts}
+              dataRetrievalTime={dataRetrievalTime}
+              llmProcessingTime={llmProcessingTime}
+              keyword={keyword}
+            />
+          )}
+        </div>
       </div>
-      
-      <div className="container mx-auto max-w-6xl pb-12">
-        <SearchForm onSearch={handleSearch} isAnalyzing={isAnalyzing} />
-
-        {isAnalyzing && (
-          <LoadingState 
-            stage={currentStage} 
-            currentPost={currentPost} 
-            totalPosts={totalPosts} 
-          />
-        )}
-
-        {analysisResults.length > 0 && (
-          <StackedResults analysisResults={analysisResults} />
-        )}
-
-        {!isAnalyzing && analysisResults.length > 0 && (
-          <Summary
-            aggregatedResult={aggregatedResult}
-            sentimentCounts={sentimentCounts}
-            dataRetrievalTime={dataRetrievalTime}
-            llmProcessingTime={llmProcessingTime}
-            keyword={keyword}
-          />
-        )}
-      </div>
-
-      <Footer />
     </div>
   );
 };

@@ -111,7 +111,16 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mx-6 -mt-4 relative z-10 border border-gray-100 dark:border-gray-700 transition-colors duration-300">
+    <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8 border border-gray-200/50 dark:border-gray-700/50 transition-colors duration-300 hover:shadow-xl">
+      <div className="mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Start Your Analysis
+        </h2>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+          Enter a search term to analyze Reddit sentiment and discover public opinion insights
+        </p>
+      </div>
+      
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="query" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -175,10 +184,10 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
         />
 
         {/* Advanced Settings */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-4 transition-colors duration-300">
+        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4 space-y-4 transition-colors duration-300">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Advanced Settings</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
             <div>
               <label htmlFor="postLimit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <MessageSquare className="inline h-4 w-4 mr-1" />
@@ -208,7 +217,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isAnalyzing }) => {
                   {postLimit > 0 ? `${estimatedTimeRange.min} - ${estimatedTimeRange.max}` : '--'}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
                 {postLimit > 0 ? estimatedTimeRange.note : 'Based on API rate limits'}
               </p>
             </div>

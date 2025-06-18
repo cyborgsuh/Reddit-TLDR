@@ -14,7 +14,7 @@ const StackedResults: React.FC<StackedResultsProps> = ({ analysisResults }) => {
   };
 
   return (
-    <div className="stacked-results">
+    <div className="stacked-results px-4 sm:px-0">
       <h2 className="results-title">Analysis Results</h2>
       
       <div className="cards-container">

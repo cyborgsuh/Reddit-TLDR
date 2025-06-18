@@ -12,11 +12,13 @@ import {
   Users,
   BarChart3,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  Sun,
+  Moon
 } from 'lucide-react';
-import DarkModeToggle from '../components/DarkModeToggle';
 
 const LandingPage: React.FC = () => {
+  const [isScrolled, setIsScrolled] = React.useState(false);
   const [isDark, setIsDark] = React.useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -24,6 +26,27 @@ const LandingPage: React.FC = () => {
     }
     return false;
   });
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setIsScrolled(scrollPosition > 100);
+    };
+
+    let ticking = false;
+    const throttledHandleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   React.useEffect(() => {
     if (isDark) {
@@ -39,58 +62,112 @@ const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
-      <DarkModeToggle isDark={isDark} onToggle={toggleDarkMode} />
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300">
       
       {/* Navigation */}
-      <nav className="relative z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <svg className="h-8 w-8 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="currentColor">
+      <header className="fixed top-6 inset-x-0 flex justify-center z-50">
+        <div
+          className={`transition-all duration-[1500ms] ease-out backdrop-blur-md border rounded-full ${
+            isScrolled
+              ? "bg-white/40 dark:bg-gray-950/40 px-10 py-3 mx-4 border-gray-200/20 dark:border-gray-700/20 shadow-xl shadow-black/5 dark:shadow-white/5 w-fit"
+              : "bg-transparent dark:bg-transparent px-16 py-4 mx-4 border-gray-200/10 dark:border-gray-700/10 shadow-none w-fit"
+          }`}
+        >
+          <div
+            className={`flex items-center justify-between transition-all duration-[1500ms] ease-out ${
+              isScrolled ? "gap-8" : "gap-12"
+            }`}
+          >
+            {/* Logo */}
+            <div className={`font-medium transition-all duration-[1500ms] ease-out ${isScrolled ? "text-lg" : "text-xl"}`}>
+              <div className="flex items-center space-x-2">
+                <svg className={`text-orange-600 dark:text-orange-600 transition-all duration-[1500ms] ease-out ${isScrolled ? "h-6 w-6" : "h-8 w-8"}`} viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
                 </svg>
+                <span className="cursor-default text-gray-900 dark:text-white transition-colors duration-[1500ms]">Reddit TLDR</span>
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Reddit TLDR</span>
             </div>
-            
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">Features</a>
-              <a href="#how-it-works" className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">How it Works</a>
-              <a href="#pricing" className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">Pricing</a>
-              <a href="#faq" className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">FAQ</a>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link 
-                to="/login" 
-                className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors font-medium"
-              >
-                Sign In
-              </Link>
-              <Link 
-                to="/signup" 
-                className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105"
-              >
-                Get Started
-              </Link>
+
+            {/* Navigation */}
+            <nav
+              className={`hidden md:flex transition-all duration-[1500ms] ease-out ${
+                isScrolled ? "gap-6 text-base" : "gap-8 text-base"
+              }`}
+            >
+              <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors relative group">
+                Features
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-600 dark:bg-orange-400 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+              <a href="#how-it-works" className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors relative group">
+                How it Works
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-600 dark:bg-orange-400 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+              <a href="#pricing" className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors relative group">
+                Pricing
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-600 dark:bg-orange-400 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+              <a href="#faq" className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors relative group">
+                FAQ
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-600 dark:bg-orange-400 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+            </nav>
+
+            {/* User Menu & Dark Mode Toggle */}
+            <div className={`transition-all duration-[1500ms] ease-out ${isScrolled ? "scale-90" : "scale-100"}`}>
+              <div className="flex items-center space-x-3">
+                {/* Dark Mode Toggle */}
+                <button
+                  onClick={toggleDarkMode}
+                  className={`p-2 rounded-full bg-gray-100/60 dark:bg-gray-800/60 backdrop-blur-sm hover:bg-gray-200/60 dark:hover:bg-gray-700/60 transition-all duration-300 group ${isScrolled ? 'p-1.5' : 'p-2'}`}
+                  aria-label="Toggle dark mode"
+                >
+                  <div className="relative">
+                    <Sun className={`${isScrolled ? 'h-5 w-5' : 'h-4 w-4'} text-orange-500 transition-all duration-500 ease-out ${
+                      isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+                    }`} />
+                    <Moon className={`absolute inset-0 ${isScrolled ? 'h-5 w-5' : 'h-4 w-4'} text-orange-400 transition-all duration-500 ease-out ${
+                      isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
+                    }`} />
+                  </div>
+                </button>
+
+                {/* Auth Buttons */}
+                <Link 
+                  to="/login" 
+                  className={`text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-800/60 text-base`}
+                >
+                  Sign In
+                </Link>
+                <Link 
+                  to="/signup" 
+                  className={`bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 ${isScrolled ? 'px-5 py-2.5 text-base' : 'px-6 py-2 text-base'}`}
+                >
+                  Get Started
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </nav>
+
+        {/* Mobile Navigation Indicator */}
+        {isScrolled && (
+          <div className="md:hidden absolute -bottom-2 left-1/2 transform -translate-x-1/2 transition-opacity duration-[1500ms]">
+            <div className="w-1 h-1 bg-orange-600 dark:bg-orange-400 rounded-full animate-pulse"></div>
+          </div>
+        )}
+      </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center">
+      <section className="relative min-h-screen flex items-center pt-20 px-4 sm:px-6">
         <div className="container mx-auto px-6">
           {/* Content */}
-          <div className="relative z-10 max-w-2xl ml-[15%]">
+          <div className="relative z-10 max-w-2xl lg:ml-[15%] mx-auto lg:mx-0 text-center lg:text-left">
             <div>
-              <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
                 AI-Powered Insights from 
                 <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent"> Reddit Discussions</span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
                 Stop scrolling, smash the Reddit button 🔥 <br />and start analyzing
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -110,7 +187,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
           </div>          {/* 3D Model */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-[10%] w-[500px] h-[500px] lg:w-[600px] lg:h-[600px] overflow-hidden">
+          <div className="hidden lg:block absolute top-1/2 -translate-y-1/2 right-[10%] w-[500px] h-[500px] lg:w-[600px] lg:h-[600px] overflow-hidden">
             <div className="relative w-full h-full" style={{ transform: 'scale(1.1)' }}>              <iframe 
                 src='https://my.spline.design/keyboard-jJ6PwzuJmsnLNAU8oA5nChzs/?embedMode=1&hideControls=true&hideUI=true&preload=1&hideSplinePromo=true&hideVersionInfo=true&hideBlur=true&disablePopup=true' 
                 frameBorder='0' 
@@ -142,27 +219,27 @@ const LandingPage: React.FC = () => {
         </div>
 
         {/* Floating Elements */}
-        <div className="absolute top-20 left-10 opacity-20 dark:opacity-10">
+        <div className="hidden md:block absolute top-20 left-10 opacity-20 dark:opacity-10">
           <MessageSquare className="h-16 w-16 text-orange-500 animate-pulse" />
         </div>
-        <div className="absolute bottom-20 right-10 opacity-20 dark:opacity-10">
+        <div className="hidden md:block absolute bottom-20 right-10 opacity-20 dark:opacity-10">
           <Brain className="h-20 w-20 text-amber-500 animate-pulse" />
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <section id="features" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Powerful Features for Smarter Analysis
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Everything you need to understand public opinion and sentiment from Reddit discussions
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
               <div className="bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/20 dark:to-amber-900/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
                 <Brain className="h-8 w-8 text-orange-600 dark:text-orange-400" />
@@ -227,18 +304,18 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20">
+      <section id="how-it-works" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               How It Works
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Simple, powerful, and effective in just three steps
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
             <div className="text-center">
               <div className="bg-gradient-to-r from-orange-600 to-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-xl">
                 1
@@ -273,18 +350,18 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <section id="pricing" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Choose the plan that fits your needs. All plans include full access to our AI-powered analysis tools.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {/* Free Plan */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="text-center mb-8">
@@ -321,7 +398,7 @@ const LandingPage: React.FC = () => {
             </div>
             
             {/* Pro Plan */}
-            <div className="bg-gradient-to-br from-orange-600 to-amber-600 rounded-2xl p-8 shadow-xl transform scale-105 relative">
+            <div className="bg-gradient-to-br from-orange-600 to-amber-600 rounded-2xl p-8 shadow-xl transform md:scale-105 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-white text-orange-600 px-4 py-1 rounded-full text-sm font-semibold">Most Popular</span>
               </div>
@@ -410,13 +487,13 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20">
+      <section id="faq" className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Everything you need to know about Reddit TLDR
             </p>
           </div>
@@ -461,12 +538,12 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-orange-600 to-amber-600">
+      <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-orange-600 to-amber-600">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
             Ready to Get Started?
           </h2>
-          <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
             Join thousands of users who are already using Reddit TLDR to understand public opinion and sentiment.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -487,9 +564,9 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-8 sm:py-12">
         <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-4">
                 <svg className="h-8 w-8 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
@@ -533,9 +610,9 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <div className="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-gray-400">&copy; 2024 Reddit TLDR. All rights reserved.</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
+            <div className="flex space-x-6">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy</a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Terms</a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Security</a>

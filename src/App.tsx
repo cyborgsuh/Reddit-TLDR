@@ -8,8 +8,11 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import DashboardPage from './pages/DashboardPage';
 import AppPage from './pages/AppPage';
 import SettingsPage from './pages/SettingsPage';
+import InsightsPage from './pages/InsightsPage';
+import MentionsPage from './pages/MentionsPage';
 
 function App() {
   return (
@@ -26,10 +29,37 @@ function App() {
             
             {/* Protected Routes */}
             <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
               path="/app" 
               element={
                 <ProtectedRoute>
                   <AppPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/mentions" 
+              element={
+                <ProtectedRoute>
+                  <MentionsPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/insights" 
+              element={
+                <ProtectedRoute>
+                  <InsightsPage />
                 </ProtectedRoute>
               } 
             />
@@ -54,7 +84,7 @@ function App() {
             />
             
             {/* Demo Route - Public for now */}
-            <Route path="/demo" element={<Navigate to="/app" replace />} />
+            <Route path="/demo" element={<Navigate to="/dashboard" replace />} />
             
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/" replace />} />
