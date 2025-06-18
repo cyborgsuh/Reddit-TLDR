@@ -12,7 +12,7 @@ interface AssociatedKeywordsProps {
   keywords: KeywordInsight[];
 }
 
-const AssociatedKeywords: React.FC<AssociatedKeywordsProps> = ({ keywords }) => {
+const AssociatedKeywords: React.FC<AssociatedKeywordsProps> = ({ keywords = [] }) => {
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
       case 'positive':

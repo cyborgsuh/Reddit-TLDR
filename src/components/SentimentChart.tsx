@@ -14,7 +14,7 @@ interface SentimentChartProps {
   title: string;
 }
 
-const SentimentChart: React.FC<SentimentChartProps> = ({ data, title }) => {
+const SentimentChart: React.FC<SentimentChartProps> = ({ data = [], title }) => {
   const maxValue = data.length > 0 ? Math.max(...data.map(d => d.positive + d.negative + d.neutral + d.mixed)) : 1;
   
   return (

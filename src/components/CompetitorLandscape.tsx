@@ -13,7 +13,7 @@ interface CompetitorLandscapeProps {
   competitors: Competitor[];
 }
 
-const CompetitorLandscape: React.FC<CompetitorLandscapeProps> = ({ competitors: initialCompetitors }) => {
+const CompetitorLandscape: React.FC<CompetitorLandscapeProps> = ({ competitors: initialCompetitors = [] }) => {
   const [competitors, setCompetitors] = useState(initialCompetitors);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCompetitor, setNewCompetitor] = useState({ name: '', score: 0, mentions: 0 });

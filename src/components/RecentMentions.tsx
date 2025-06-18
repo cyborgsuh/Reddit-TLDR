@@ -16,7 +16,7 @@ interface RecentMentionsProps {
   mentions: Mention[];
 }
 
-const RecentMentions: React.FC<RecentMentionsProps> = ({ mentions }) => {
+const RecentMentions: React.FC<RecentMentionsProps> = ({ mentions = [] }) => {
   const getSentimentIcon = (sentiment: string) => {
     switch (sentiment) {
       case 'positive':
