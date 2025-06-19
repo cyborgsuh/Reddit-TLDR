@@ -382,6 +382,28 @@ serve(async (req) => {
   try {
     console.log('Starting keyword monitoring process...')
     
+    // Parse request body to check for specific user ID
+    let requestBody: any = {}
+    let specificUserId: string | null = null
+    
+    if (req.method === 'POST') {
+      try {
+        const bodyText = await req.text()
+        if (bodyText) {
+          requestBody = JSON.parse(bodyText)
+          specificUserId = requestBody.user_id || null
+        }
+      } catch (parseError) {
+        console.log('No valid JSON body found, proceeding with scheduled search for all users')
+      }
+    }
+
+    if (specificUserId) {
+      console.log(`🎯 MANUAL SEARCH TRIGGERED for specific user: ${specificUserId}`)
+    } else {
+      console.log(`⏰ SCHEDULED SEARCH for all users with due keywords`)
+    }
+    
     // Check environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -412,108 +434,69 @@ serve(async (req) => {
     const currentTimeISO = currentTime.toISOString()
     const currentTimeMs = currentTime.getTime()
     
-    console.log('=== DATE COMPARISON DEBUG ===')
+    console.log('=== SEARCH CRITERIA ===')
     console.log('Current time (ISO):', currentTimeISO)
-    console.log('Current time (milliseconds):', currentTimeMs)
-    console.log('Current time (Date object):', currentTime)
+    console.log('Specific user ID:', specificUserId || 'ALL USERS')
 
-    // Fetch ALL active keyword searches (removing time filter from database query)
-    console.log('Fetching ALL active keyword searches from database...')
-    
-    const { data: allActiveSearches, error: searchError } = await supabaseClient
+    // Build query based on whether this is a user-specific search or scheduled search
+    let query = supabaseClient
       .from('keyword_searches')
       .select('*')
       .eq('is_active', true)
-      .order('next_search_at', { ascending: true })
+
+    if (specificUserId) {
+      // User-specific search: get all active keywords for this user
+      console.log(`🎯 Fetching ALL active keywords for user: ${specificUserId}`)
+      query = query.eq('user_id', specificUserId)
+    } else {
+      // Scheduled search: only get keywords that are due for searching
+      console.log(`⏰ Fetching keywords due for scheduled search`)
+      query = query.lte('next_search_at', currentTimeISO)
+    }
+
+    const { data: searchesToProcess, error: searchError } = await query.order('next_search_at', { ascending: true })
 
     console.log('Database query completed')
     console.log('Search error:', searchError ? JSON.stringify(searchError, null, 2) : 'none')
-    console.log('Number of active searches found:', allActiveSearches?.length || 0)
+    console.log('Number of searches found:', searchesToProcess?.length || 0)
 
     if (searchError) {
       console.error('❌ Error fetching searches from database:', searchError)
       throw new Error(`Error fetching searches: ${searchError.message}`)
     }
 
-    if (!allActiveSearches || allActiveSearches.length === 0) {
-      console.log('⚠️ No active keyword searches found in database')
+    if (!searchesToProcess || searchesToProcess.length === 0) {
+      const message = specificUserId 
+        ? `No active keywords found for user ${specificUserId}`
+        : 'No keywords need processing at this time'
+      
+      console.log(`⚠️ ${message}`)
       return new Response(
         JSON.stringify({ 
           success: true, 
           processed: 0,
           totalMentionsFound: 0,
-          message: 'No active keywords found in database',
+          message: message,
           debug: {
             currentTime: currentTimeISO,
-            activeSearchesCount: 0
+            searchType: specificUserId ? 'user-specific' : 'scheduled',
+            userId: specificUserId,
+            keywordsFound: 0
           }
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
-    }
-
-    console.log(`Found ${allActiveSearches.length} active keyword searches`)
-    console.log('=== MANUAL DATE FILTERING DEBUG ===')
-
-    // Manually filter keywords based on next_search_at
-    const searchesToProcess = []
-    
-    for (let i = 0; i < allActiveSearches.length; i++) {
-      const search = allActiveSearches[i]
-      const nextSearchAt = new Date(search.next_search_at)
-      const nextSearchAtMs = nextSearchAt.getTime()
-      const shouldProcess = nextSearchAtMs <= currentTimeMs
-      
-      console.log(`\n--- Keyword ${i + 1}: "${search.keyword}" (ID: ${search.id}) ---`)
-      console.log('User ID:', search.user_id)
-      console.log('Next search at (ISO):', search.next_search_at)
-      console.log('Next search at (Date object):', nextSearchAt)
-      console.log('Next search at (milliseconds):', nextSearchAtMs)
-      console.log('Current time (milliseconds):', currentTimeMs)
-      console.log('Time difference (ms):', currentTimeMs - nextSearchAtMs)
-      console.log('Time difference (minutes):', Math.round((currentTimeMs - nextSearchAtMs) / (1000 * 60)))
-      console.log('Should process (nextSearchAt <= currentTime):', shouldProcess)
-      console.log('Is active:', search.is_active)
-      console.log('Last searched at:', search.last_searched_at || 'never')
-      console.log('Search frequency (hours):', search.search_frequency_hours)
-      
-      if (shouldProcess) {
-        console.log('✅ ADDING TO PROCESSING QUEUE')
-        searchesToProcess.push(search)
-      } else {
-        console.log('⏭️ SKIPPING - not yet time to search')
-      }
     }
 
     console.log(`\n=== PROCESSING SUMMARY ===`)
-    console.log(`Total active searches: ${allActiveSearches.length}`)
-    console.log(`Searches to process: ${searchesToProcess.length}`)
-
-    if (searchesToProcess.length === 0) {
-      console.log('⚠️ No keyword searches need processing at this time')
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          processed: 0,
-          totalMentionsFound: 0,
-          message: 'No keywords need processing at this time',
-          debug: {
-            currentTime: currentTimeISO,
-            totalActiveSearches: allActiveSearches.length,
-            searchesToProcess: 0,
-            nextSearchTimes: allActiveSearches.map(s => ({
-              keyword: s.keyword,
-              nextSearchAt: s.next_search_at,
-              minutesUntilNext: Math.round((new Date(s.next_search_at).getTime() - currentTimeMs) / (1000 * 60))
-            }))
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+    console.log(`Search type: ${specificUserId ? 'USER-SPECIFIC MANUAL' : 'SCHEDULED AUTOMATIC'}`)
+    console.log(`Keywords to process: ${searchesToProcess.length}`)
+    
+    if (specificUserId) {
+      console.log(`Target user: ${specificUserId}`)
+      console.log(`Keywords: ${searchesToProcess.map(s => s.keyword).join(', ')}`)
     }
 
     let totalProcessed = 0
@@ -525,6 +508,7 @@ serve(async (req) => {
         console.log(`👤 User ID: ${search.user_id}`)
         console.log(`⏰ Last searched: ${search.last_searched_at || 'never'}`)
         console.log(`🔄 Search frequency: every ${search.search_frequency_hours} hours`)
+        console.log(`🎯 Search type: ${specificUserId ? 'MANUAL USER REQUEST' : 'SCHEDULED AUTOMATIC'}`)
         
         // Get valid Reddit token for this user
         const accessToken = await getValidRedditToken(supabaseClient, search.user_id)
@@ -650,20 +634,29 @@ serve(async (req) => {
         }
 
         // Update the search record
-        const nextSearchTime = new Date()
-        nextSearchTime.setHours(nextSearchTime.getHours() + search.search_frequency_hours)
+        // For manual searches, don't update the next_search_at time
+        // For scheduled searches, update the next_search_at time
+        const updateData: any = {
+          last_searched_at: new Date().toISOString(),
+          total_mentions_found: search.total_mentions_found + mentionsFound,
+          last_error: null
+        }
+
+        if (!specificUserId) {
+          // Only update next_search_at for scheduled searches
+          const nextSearchTime = new Date()
+          nextSearchTime.setHours(nextSearchTime.getHours() + search.search_frequency_hours)
+          updateData.next_search_at = nextSearchTime.toISOString()
+          console.log(`⏰ [${search.user_id}] Next scheduled search: ${nextSearchTime.toISOString()}`)
+        } else {
+          console.log(`🎯 [${search.user_id}] Manual search - not updating next_search_at`)
+        }
 
         console.log(`📝 [${search.user_id}] Updating search record for keyword: ${search.keyword}`)
-        console.log(`⏰ [${search.user_id}] Next search scheduled for: ${nextSearchTime.toISOString()}`)
 
         const { error: updateError } = await supabaseClient
           .from('keyword_searches')
-          .update({
-            last_searched_at: new Date().toISOString(),
-            next_search_at: nextSearchTime.toISOString(),
-            total_mentions_found: search.total_mentions_found + mentionsFound,
-            last_error: null
-          })
+          .update(updateData)
           .eq('id', search.id)
 
         if (updateError) {
@@ -692,6 +685,7 @@ serve(async (req) => {
     }
 
     console.log(`\n🏁 === KEYWORD MONITORING COMPLETED ===`)
+    console.log(`📊 Search type: ${specificUserId ? 'USER-SPECIFIC MANUAL' : 'SCHEDULED AUTOMATIC'}`)
     console.log(`📊 Processed: ${totalProcessed} keywords`)
     console.log(`📊 Total new mentions found: ${totalMentionsFound}`)
 
@@ -706,16 +700,21 @@ serve(async (req) => {
 
     console.log('=== KEYWORD MONITOR FUNCTION COMPLETED SUCCESSFULLY ===')
 
+    const responseMessage = specificUserId 
+      ? `Manual search completed for user ${specificUserId}`
+      : 'Scheduled keyword monitoring completed successfully'
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         processed: totalProcessed,
         totalMentionsFound: totalMentionsFound,
-        message: 'Keyword monitoring completed successfully',
+        message: responseMessage,
         timestamp: new Date().toISOString(),
         debug: {
-          totalActiveSearches: allActiveSearches.length,
-          searchesProcessed: totalProcessed,
+          searchType: specificUserId ? 'user-specific' : 'scheduled',
+          userId: specificUserId,
+          keywordsProcessed: totalProcessed,
           currentTime: currentTimeISO
         }
       }),

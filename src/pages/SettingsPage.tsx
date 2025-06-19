@@ -429,12 +429,21 @@ const SettingsPage: React.FC = () => {
         throw new Error('No active session');
       }
 
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/keyword-monitor`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          user_id: user.id
+        })
       });
 
       if (!response.ok) {
@@ -442,7 +451,7 @@ const SettingsPage: React.FC = () => {
       }
 
       await loadKeywords();
-      setSuccessMessage('Manual search triggered! Check back in a few minutes for new mentions.');
+      setSuccessMessage('Manual search completed! Check the Mentions page for new results.');
       setTimeout(() => setSuccessMessage(''), 5000);
     } catch (err) {
       console.error('Error triggering search:', err);
