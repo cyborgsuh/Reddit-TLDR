@@ -150,22 +150,30 @@ export class RedditAuth {
     const REDDIT_REDIRECT_URI = getRedirectUri();
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     
-    // Use anon key for token exchange
-    const authToken = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    // Get current user session to pass user_id to the function
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_ANON_KEY
+    );
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id || null;
     
     console.log('RedditAuth: Making token exchange request to Supabase function');
     console.log('RedditAuth: Supabase URL present:', !!supabaseUrl);
-    console.log('RedditAuth: Auth token present:', !!authToken);
+    console.log('RedditAuth: User ID present:', !!userId);
     
     const response = await fetch(`${supabaseUrl}/functions/v1/reddit-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         code,
-        redirect_uri: REDDIT_REDIRECT_URI
+        redirect_uri: REDDIT_REDIRECT_URI,
+        user_id: userId
       })
     });
 

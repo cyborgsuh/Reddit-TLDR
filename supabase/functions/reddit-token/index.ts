@@ -18,9 +18,10 @@ serve(async (req) => {
 
   try {
     console.log('Parsing request body...')
-    const { code, redirect_uri } = await req.json()
+    const { code, redirect_uri, user_id } = await req.json()
     console.log('Received code:', code ? 'present' : 'missing')
     console.log('Received redirect_uri:', redirect_uri)
+    console.log('Received user_id:', user_id ? 'present' : 'missing')
 
     if (!code || !redirect_uri) {
       console.error('Missing required parameters:', { code: !!code, redirect_uri: !!redirect_uri })
@@ -107,54 +108,43 @@ serve(async (req) => {
       console.warn('Failed to fetch Reddit user info:', userResponse.status, userResponse.statusText)
     }
 
-    // Store credentials in Supabase if user is authenticated
-    const authHeader = req.headers.get('Authorization')
-    console.log('Auth header present:', !!authHeader)
-    
-    if (authHeader) {
-      console.log('Creating Supabase client...')
+    // Store credentials in Supabase if user_id is provided
+    if (user_id) {
+      console.log('Creating Supabase client with service role key...')
       const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-        { global: { headers: { Authorization: authHeader } } }
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       )
 
-      console.log('Getting user from auth...')
-      const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+      console.log('Attempting to upsert Reddit credentials for user:', user_id)
       
-      if (userError) {
-        console.error('Error getting user from auth:', userError)
-      } else if (!user) {
-        console.error('No user found in auth')
-      } else {
-        console.log('User found:', user.id)
-        
-        const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
-        console.log('Token expires at:', expiresAt)
-        
-        console.log('Attempting to upsert Reddit credentials...')
-        const { data: upsertData, error: upsertError } = await supabaseClient
-          .from('reddit_credentials')
-          .upsert({
-            user_id: user.id,
-            reddit_username: username || 'unknown',
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
-            expires_at: expiresAt,
-            scope: tokenData.scope || 'read'
-          })
-          .select()
+      const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
+      console.log('Token expires at:', expiresAt)
+      
+      const { data: upsertData, error: upsertError } = await supabaseClient
+        .from('reddit_credentials')
+        .upsert({
+          user_id: user_id,
+          reddit_username: username || 'unknown',
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: expiresAt,
+          scope: tokenData.scope || 'read'
+        })
+        .select()
 
-        if (upsertError) {
-          console.error('Supabase upsert error:', upsertError)
-          console.error('Error details:', JSON.stringify(upsertError, null, 2))
-        } else {
-          console.log('Successfully upserted Reddit credentials for user:', user.id)
-          console.log('Upsert result:', upsertData)
-        }
+      if (upsertError) {
+        console.error('Supabase upsert error:', upsertError)
+        console.error('Error details:', JSON.stringify(upsertError, null, 2))
+        
+        // Don't fail the entire request if database storage fails
+        console.warn('Continuing despite database storage failure')
+      } else {
+        console.log('Successfully upserted Reddit credentials for user:', user_id)
+        console.log('Upsert result:', upsertData)
       }
     } else {
-      console.warn('No authorization header provided - credentials not stored')
+      console.warn('No user_id provided - credentials not stored in database')
     }
 
     console.log('=== Reddit Token Function Completed Successfully ===')
