@@ -110,7 +110,6 @@ export class RedditAuth {
       console.log('RedditAuth: Starting handleCallback');
       console.log('RedditAuth: Code present:', !!code);
       console.log('RedditAuth: State present:', !!state);
-      console.log('RedditAuth: User access token present:', !!userAccessToken);
       
       // Verify state parameter
       const storedState = localStorage.getItem('reddit_auth_state_param');
@@ -125,7 +124,7 @@ export class RedditAuth {
 
       // Exchange code for tokens
       console.log('RedditAuth: Exchanging code for tokens...');
-      const tokenResponse = await this.exchangeCodeForTokens(code, userAccessToken);
+      const tokenResponse = await this.exchangeCodeForTokens(code);
       console.log('RedditAuth: Token exchange successful');
       
       // Update auth state
@@ -147,17 +146,16 @@ export class RedditAuth {
     }
   }
 
-  private async exchangeCodeForTokens(code: string, userAccessToken?: string): Promise<RedditTokenResponse> {
+  private async exchangeCodeForTokens(code: string): Promise<RedditTokenResponse> {
     const REDDIT_REDIRECT_URI = getRedirectUri();
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     
-    // Use user access token if provided, otherwise fall back to anon key
-    const authToken = userAccessToken || import.meta.env.VITE_SUPABASE_ANON_KEY;
+    // Use anon key for token exchange
+    const authToken = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
     console.log('RedditAuth: Making token exchange request to Supabase function');
     console.log('RedditAuth: Supabase URL present:', !!supabaseUrl);
     console.log('RedditAuth: Auth token present:', !!authToken);
-    console.log('RedditAuth: Using user token:', !!userAccessToken);
     
     const response = await fetch(`${supabaseUrl}/functions/v1/reddit-token`, {
       method: 'POST',

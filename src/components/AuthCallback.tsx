@@ -41,7 +41,7 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthComplete }) => {
 
         console.log('AuthCallback: Calling redditAuth.handleCallback...');
         const redditAuth = RedditAuth.getInstance();
-        const success = await redditAuth.handleCallback(code, state, session?.access_token);
+        const success = await redditAuth.handleCallback(code, state);
         
         console.log('AuthCallback: redditAuth.handleCallback returned success:', success);
         
