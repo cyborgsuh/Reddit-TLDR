@@ -319,53 +319,44 @@ serve(async (req) => {
     console.log('✓ Supabase client created successfully')
 
     // Get current timestamp for comparison
-    const currentTime = new Date().toISOString()
-    console.log('Current time for comparison:', currentTime)
-
-    // Get all active keyword searches that need to be processed
-    console.log('Fetching keyword searches from database...')
-    console.log('Query conditions:')
-    console.log('- is_active = true')
-    console.log('- next_search_at <= current time')
+    const currentTime = new Date()
+    const currentTimeISO = currentTime.toISOString()
+    const currentTimeMs = currentTime.getTime()
     
-    const { data: searches, error: searchError } = await supabaseClient
+    console.log('=== DATE COMPARISON DEBUG ===')
+    console.log('Current time (ISO):', currentTimeISO)
+    console.log('Current time (milliseconds):', currentTimeMs)
+    console.log('Current time (Date object):', currentTime)
+
+    // Fetch ALL active keyword searches (removing time filter from database query)
+    console.log('Fetching ALL active keyword searches from database...')
+    
+    const { data: allActiveSearches, error: searchError } = await supabaseClient
       .from('keyword_searches')
       .select('*')
       .eq('is_active', true)
-      .lte('next_search_at', currentTime)
+      .order('next_search_at', { ascending: true })
 
     console.log('Database query completed')
     console.log('Search error:', searchError ? JSON.stringify(searchError, null, 2) : 'none')
-    console.log('Raw search results:', searches ? JSON.stringify(searches, null, 2) : 'null')
-    console.log('Number of searches found:', searches?.length || 0)
+    console.log('Number of active searches found:', allActiveSearches?.length || 0)
 
     if (searchError) {
       console.error('❌ Error fetching searches from database:', searchError)
       throw new Error(`Error fetching searches: ${searchError.message}`)
     }
 
-    if (!searches || searches.length === 0) {
-      console.log('⚠️ No keyword searches found that meet criteria')
-      
-      // Let's also check what keywords exist in the database
-      console.log('Checking all keywords in database for debugging...')
-      const { data: allKeywords, error: allKeywordsError } = await supabaseClient
-        .from('keyword_searches')
-        .select('*')
-      
-      console.log('All keywords in database:', allKeywords ? JSON.stringify(allKeywords, null, 2) : 'null')
-      console.log('All keywords error:', allKeywordsError ? JSON.stringify(allKeywordsError, null, 2) : 'none')
-      
+    if (!allActiveSearches || allActiveSearches.length === 0) {
+      console.log('⚠️ No active keyword searches found in database')
       return new Response(
         JSON.stringify({ 
           success: true, 
           processed: 0,
           totalMentionsFound: 0,
-          message: 'No keywords found that need processing',
+          message: 'No active keywords found in database',
           debug: {
-            currentTime,
-            allKeywordsCount: allKeywords?.length || 0,
-            allKeywords: allKeywords || []
+            currentTime: currentTimeISO,
+            activeSearchesCount: 0
           }
         }),
         { 
@@ -374,15 +365,74 @@ serve(async (req) => {
       )
     }
 
-    console.log(`✓ Found ${searches.length} keyword searches to process`)
+    console.log(`Found ${allActiveSearches.length} active keyword searches`)
+    console.log('=== MANUAL DATE FILTERING DEBUG ===')
+
+    // Manually filter keywords based on next_search_at
+    const searchesToProcess = []
+    
+    for (let i = 0; i < allActiveSearches.length; i++) {
+      const search = allActiveSearches[i]
+      const nextSearchAt = new Date(search.next_search_at)
+      const nextSearchAtMs = nextSearchAt.getTime()
+      const shouldProcess = nextSearchAtMs <= currentTimeMs
+      
+      console.log(`\n--- Keyword ${i + 1}: "${search.keyword}" (ID: ${search.id}) ---`)
+      console.log('User ID:', search.user_id)
+      console.log('Next search at (ISO):', search.next_search_at)
+      console.log('Next search at (Date object):', nextSearchAt)
+      console.log('Next search at (milliseconds):', nextSearchAtMs)
+      console.log('Current time (milliseconds):', currentTimeMs)
+      console.log('Time difference (ms):', currentTimeMs - nextSearchAtMs)
+      console.log('Time difference (minutes):', Math.round((currentTimeMs - nextSearchAtMs) / (1000 * 60)))
+      console.log('Should process (nextSearchAt <= currentTime):', shouldProcess)
+      console.log('Is active:', search.is_active)
+      console.log('Last searched at:', search.last_searched_at || 'never')
+      console.log('Search frequency (hours):', search.search_frequency_hours)
+      
+      if (shouldProcess) {
+        console.log('✅ ADDING TO PROCESSING QUEUE')
+        searchesToProcess.push(search)
+      } else {
+        console.log('⏭️ SKIPPING - not yet time to search')
+      }
+    }
+
+    console.log(`\n=== PROCESSING SUMMARY ===`)
+    console.log(`Total active searches: ${allActiveSearches.length}`)
+    console.log(`Searches to process: ${searchesToProcess.length}`)
+
+    if (searchesToProcess.length === 0) {
+      console.log('⚠️ No keyword searches need processing at this time')
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          processed: 0,
+          totalMentionsFound: 0,
+          message: 'No keywords need processing at this time',
+          debug: {
+            currentTime: currentTimeISO,
+            totalActiveSearches: allActiveSearches.length,
+            searchesToProcess: 0,
+            nextSearchTimes: allActiveSearches.map(s => ({
+              keyword: s.keyword,
+              nextSearchAt: s.next_search_at,
+              minutesUntilNext: Math.round((new Date(s.next_search_at).getTime() - currentTimeMs) / (1000 * 60))
+            }))
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
     let totalProcessed = 0
     let totalMentionsFound = 0
 
-    for (const search of searches) {
+    for (const search of searchesToProcess) {
       try {
         console.log(`\n--- Processing keyword: "${search.keyword}" for user: ${search.user_id} ---`)
-        console.log('Search details:', JSON.stringify(search, null, 2))
         
         // Get valid Reddit token for this user
         const accessToken = await getValidRedditToken(supabaseClient, search.user_id)
@@ -567,7 +617,12 @@ serve(async (req) => {
         processed: totalProcessed,
         totalMentionsFound: totalMentionsFound,
         message: 'Keyword monitoring completed successfully',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        debug: {
+          totalActiveSearches: allActiveSearches.length,
+          searchesProcessed: totalProcessed,
+          currentTime: currentTimeISO
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
