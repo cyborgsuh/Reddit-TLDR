@@ -13,37 +13,62 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthComplete }) => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        console.log('AuthCallback: Starting handleCallback');
+        console.log('AuthCallback: Current URL:', window.location.href);
+        
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const state = urlParams.get('state');
         const error = urlParams.get('error');
 
+        console.log('AuthCallback: URL parameters:', {
+          code: code ? 'present' : 'missing',
+          state: state ? 'present' : 'missing',
+          error: error
+        });
+
         if (error) {
+          console.error('AuthCallback: URL error parameter:', error);
           throw new Error(`Reddit authentication error: ${error}`);
         }
 
         if (!code || !state) {
+          console.error('AuthCallback: Missing required parameters');
           throw new Error('Missing authorization code or state parameter');
         }
 
+        console.log('AuthCallback: Calling redditAuth.handleCallback...');
         const redditAuth = RedditAuth.getInstance();
         const success = await redditAuth.handleCallback(code, state);
-
+        
+        console.log('AuthCallback: redditAuth.handleCallback returned success:', success);
+        
         if (success) {
+          console.log('AuthCallback: Authentication successful, updating UI...');
           setStatus('success');
           setMessage('Successfully connected to Reddit!');
-          setTimeout(() => onAuthComplete(true), 2000);
+          console.log('AuthCallback: Scheduling redirect in 2 seconds...');
+          setTimeout(() => {
+            console.log('AuthCallback: Calling onAuthComplete(true)');
+            onAuthComplete(true);
+          }, 2000);
         } else {
+          console.error('AuthCallback: Failed to complete Reddit authentication via handleCallback');
           throw new Error('Failed to complete Reddit authentication');
         }
       } catch (error) {
-        console.error('Auth callback error:', error);
+        console.error('AuthCallback: Error in handleCallback:', error);
+        console.error('AuthCallback: Error stack:', error instanceof Error ? error.stack : 'No stack trace');
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Authentication failed');
-        setTimeout(() => onAuthComplete(false), 3000);
+        setTimeout(() => {
+          console.log('AuthCallback: Calling onAuthComplete(false) after error');
+          onAuthComplete(false);
+        }, 3000);
       }
     };
 
+    console.log('AuthCallback: Component mounted, starting authentication flow');
     handleCallback();
   }, [onAuthComplete]);
 
