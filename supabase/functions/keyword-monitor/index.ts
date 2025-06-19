@@ -44,11 +44,12 @@ async function refreshRedditToken(
     const clientSecret = Deno.env.get('REDDIT_CLIENT_SECRET')
 
     if (!clientId || !clientSecret) {
-      console.error('Reddit credentials not configured')
+      console.error(`🔑 [${userId}] Reddit credentials not configured in environment`)
       return null
     }
 
-    console.log(`Refreshing Reddit token for user: ${userId}`)
+    console.log(`🔄 [${userId}] Starting token refresh process...`)
+    console.log(`🔄 [${userId}] Using refresh token: ${refreshToken.substring(0, 10)}...`)
 
     const tokenResponse = await fetch('https://www.reddit.com/api/v1/access_token', {
       method: 'POST',
@@ -63,17 +64,24 @@ async function refreshRedditToken(
       }),
     })
 
+    console.log(`🔄 [${userId}] Reddit refresh response status: ${tokenResponse.status}`)
+
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      console.error('Reddit token refresh failed:', errorText)
+      console.error(`❌ [${userId}] Reddit token refresh failed: ${errorText}`)
+      console.error(`❌ [${userId}] This usually means the refresh token is invalid or expired`)
       return null
     }
 
     const tokenData = await tokenResponse.json()
     const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
 
+    console.log(`✅ [${userId}] Token refresh successful!`)
+    console.log(`✅ [${userId}] New token expires at: ${expiresAt}`)
+    console.log(`✅ [${userId}] Token valid for: ${tokenData.expires_in} seconds (${Math.round(tokenData.expires_in / 3600)} hours)`)
+
     // Update credentials in database
-    await supabaseClient
+    const { error: updateError } = await supabaseClient
       .from('reddit_credentials')
       .update({
         access_token: tokenData.access_token,
@@ -82,10 +90,15 @@ async function refreshRedditToken(
       })
       .eq('user_id', userId)
 
-    console.log(`Successfully refreshed Reddit token for user: ${userId}`)
+    if (updateError) {
+      console.error(`❌ [${userId}] Failed to update token in database: ${updateError.message}`)
+      return null
+    }
+
+    console.log(`💾 [${userId}] Successfully updated token in database`)
     return tokenData.access_token
   } catch (error) {
-    console.error('Error refreshing Reddit token:', error)
+    console.error(`❌ [${userId}] Error during token refresh:`, error)
     return null
   }
 }
@@ -95,37 +108,79 @@ async function getValidRedditToken(
   userId: string
 ): Promise<string | null> {
   try {
+    console.log(`\n🔍 [${userId}] === TOKEN VALIDATION PROCESS ===`)
+    
     // Get user's Reddit credentials
+    console.log(`🔍 [${userId}] Fetching Reddit credentials from database...`)
     const { data: credentials, error } = await supabaseClient
       .from('reddit_credentials')
       .select('access_token, refresh_token, expires_at, reddit_username')
       .eq('user_id', userId)
       .single()
 
-    if (error || !credentials) {
-      console.log(`No Reddit credentials found for user: ${userId}`)
+    if (error) {
+      console.log(`❌ [${userId}] Database error fetching credentials: ${error.message}`)
       return null
     }
 
+    if (!credentials) {
+      console.log(`❌ [${userId}] No Reddit credentials found in database`)
+      console.log(`❌ [${userId}] User needs to connect their Reddit account first`)
+      return null
+    }
+
+    console.log(`✅ [${userId}] Found Reddit credentials in database`)
+    console.log(`📊 [${userId}] Reddit username: ${credentials.reddit_username}`)
+    console.log(`📊 [${userId}] Access token present: ${credentials.access_token ? 'YES' : 'NO'}`)
+    console.log(`📊 [${userId}] Refresh token present: ${credentials.refresh_token ? 'YES' : 'NO'}`)
+    console.log(`📊 [${userId}] Token expires at: ${credentials.expires_at}`)
+
     const now = new Date()
     const expiresAt = new Date(credentials.expires_at)
+    const timeUntilExpiry = expiresAt.getTime() - now.getTime()
+    const minutesUntilExpiry = Math.round(timeUntilExpiry / (1000 * 60))
+    const hoursUntilExpiry = Math.round(timeUntilExpiry / (1000 * 60 * 60))
+
+    console.log(`⏰ [${userId}] Current time: ${now.toISOString()}`)
+    console.log(`⏰ [${userId}] Token expires: ${expiresAt.toISOString()}`)
+    console.log(`⏰ [${userId}] Time until expiry: ${minutesUntilExpiry} minutes (${hoursUntilExpiry} hours)`)
 
     // Check if token is still valid (with 5 minute buffer)
-    if (expiresAt.getTime() > now.getTime() + (5 * 60 * 1000)) {
-      console.log(`Using existing valid token for user: ${userId}`)
+    const bufferTime = 5 * 60 * 1000 // 5 minutes in milliseconds
+    const isTokenValid = expiresAt.getTime() > now.getTime() + bufferTime
+
+    console.log(`🔍 [${userId}] Token validation check:`)
+    console.log(`🔍 [${userId}] - Token expiry time: ${expiresAt.getTime()}`)
+    console.log(`🔍 [${userId}] - Current time + buffer: ${now.getTime() + bufferTime}`)
+    console.log(`🔍 [${userId}] - Is token valid: ${isTokenValid}`)
+
+    if (isTokenValid) {
+      console.log(`✅ [${userId}] Using existing valid access token`)
+      console.log(`✅ [${userId}] Token is valid for another ${minutesUntilExpiry} minutes`)
       return credentials.access_token
     }
 
-    // Token is expired or about to expire, refresh it
-    if (credentials.refresh_token) {
-      console.log(`Token expired for user: ${userId}, attempting refresh`)
-      return await refreshRedditToken(supabaseClient, userId, credentials.refresh_token)
+    // Token is expired or about to expire
+    console.log(`⚠️ [${userId}] Access token is expired or expiring soon`)
+    
+    if (!credentials.refresh_token) {
+      console.log(`❌ [${userId}] No refresh token available - cannot refresh`)
+      console.log(`❌ [${userId}] User will need to re-authenticate with Reddit`)
+      return null
     }
 
-    console.log(`No refresh token available for user: ${userId}`)
-    return null
+    console.log(`🔄 [${userId}] Attempting to refresh expired token...`)
+    const newAccessToken = await refreshRedditToken(supabaseClient, userId, credentials.refresh_token)
+    
+    if (newAccessToken) {
+      console.log(`✅ [${userId}] Successfully refreshed token`)
+      return newAccessToken
+    } else {
+      console.log(`❌ [${userId}] Token refresh failed`)
+      return null
+    }
   } catch (error) {
-    console.error('Error getting Reddit token:', error)
+    console.error(`❌ [${userId}] Unexpected error getting Reddit token:`, error)
     return null
   }
 }
@@ -133,6 +188,7 @@ async function getValidRedditToken(
 async function searchRedditForKeyword(
   keyword: string,
   accessToken: string | null,
+  userId: string,
   limit: number = 25
 ): Promise<RedditPost[]> {
   try {
@@ -147,7 +203,9 @@ async function searchRedditForKeyword(
         'User-Agent': 'RedditTLDR-Monitor/1.0 (by /u/RedditTLDR)',
         'Accept': 'application/json',
       }
-      console.log(`Making authenticated Reddit search for keyword: ${keyword}`)
+      console.log(`🔐 [${userId}] Making AUTHENTICATED Reddit search for keyword: "${keyword}"`)
+      console.log(`🔐 [${userId}] Using access token: ${accessToken.substring(0, 10)}...`)
+      console.log(`🔐 [${userId}] Search URL: ${url}`)
     } else {
       // Fallback to unauthenticated endpoint
       url = `https://www.reddit.com/search.json?q=${encodeURIComponent(keyword)}&limit=${limit}&sort=new&t=week`
@@ -155,17 +213,29 @@ async function searchRedditForKeyword(
         'User-Agent': 'RedditTLDR-Monitor/1.0 (by /u/RedditTLDR)',
         'Accept': 'application/json',
       }
-      console.log(`Making unauthenticated Reddit search for keyword: ${keyword}`)
+      console.log(`🌐 [${userId}] Making UNAUTHENTICATED Reddit search for keyword: "${keyword}"`)
+      console.log(`⚠️ [${userId}] WARNING: Using unauthenticated API - subject to rate limiting`)
+      console.log(`🌐 [${userId}] Search URL: ${url}`)
     }
 
     const response = await fetch(url, { headers })
 
+    console.log(`📡 [${userId}] Reddit API response status: ${response.status}`)
+    console.log(`📡 [${userId}] Reddit API response status text: ${response.statusText}`)
+
     if (!response.ok) {
-      console.error(`Reddit search failed: ${response.status} ${response.statusText}`)
+      console.error(`❌ [${userId}] Reddit search failed: ${response.status} ${response.statusText}`)
       
       // If authenticated request fails with 401, token might be invalid
       if (accessToken && response.status === 401) {
-        console.error('Reddit access token appears to be invalid')
+        console.error(`🔑 [${userId}] CRITICAL: Reddit access token appears to be INVALID`)
+        console.error(`🔑 [${userId}] This suggests the token was revoked or corrupted`)
+      } else if (response.status === 429) {
+        console.error(`⏰ [${userId}] Rate limited by Reddit API`)
+        console.error(`⏰ [${userId}] ${accessToken ? 'Even authenticated requests' : 'Unauthenticated requests'} are being rate limited`)
+      } else if (response.status === 403) {
+        console.error(`🚫 [${userId}] Forbidden by Reddit API`)
+        console.error(`🚫 [${userId}] This might indicate IP blocking or policy violation`)
       }
       
       return []
@@ -174,10 +244,18 @@ async function searchRedditForKeyword(
     const data = await response.json()
     const posts = data?.data?.children?.map((child: any) => child.data) || []
     
-    console.log(`Found ${posts.length} posts for keyword: ${keyword}`)
+    console.log(`✅ [${userId}] Successfully retrieved ${posts.length} posts for keyword: "${keyword}"`)
+    
+    if (posts.length === 0) {
+      console.log(`📭 [${userId}] No posts found - this could mean:`)
+      console.log(`📭 [${userId}] - No recent posts contain the keyword`)
+      console.log(`📭 [${userId}] - The keyword is too specific`)
+      console.log(`📭 [${userId}] - Reddit's search algorithm filtered results`)
+    }
+    
     return posts
   } catch (error) {
-    console.error('Error searching Reddit:', error)
+    console.error(`❌ [${userId}] Error searching Reddit:`, error)
     return []
   }
 }
@@ -186,6 +264,7 @@ async function getPostComments(
   subreddit: string,
   postId: string,
   accessToken: string | null,
+  userId: string,
   limit: number = 10
 ): Promise<RedditComment[]> {
   try {
@@ -200,6 +279,7 @@ async function getPostComments(
         'User-Agent': 'RedditTLDR-Monitor/1.0 (by /u/RedditTLDR)',
         'Accept': 'application/json',
       }
+      console.log(`🔐 [${userId}] Fetching comments with AUTHENTICATED request`)
     } else {
       // Fallback to unauthenticated endpoint
       url = `https://www.reddit.com/r/${subreddit}/comments/${postId}.json?limit=${limit}&sort=top`
@@ -207,12 +287,13 @@ async function getPostComments(
         'User-Agent': 'RedditTLDR-Monitor/1.0 (by /u/RedditTLDR)',
         'Accept': 'application/json',
       }
+      console.log(`🌐 [${userId}] Fetching comments with UNAUTHENTICATED request`)
     }
 
     const response = await fetch(url, { headers })
 
     if (!response.ok) {
-      console.error(`Failed to fetch comments: ${response.status} ${response.statusText}`)
+      console.error(`❌ [${userId}] Failed to fetch comments: ${response.status} ${response.statusText}`)
       return []
     }
 
@@ -225,10 +306,10 @@ async function getPostComments(
       comment && comment.body && comment.body !== '[deleted]' && comment.body !== '[removed]'
     ) || []
 
-    console.log(`Found ${comments.length} comments for post: ${postId}`)
+    console.log(`💬 [${userId}] Found ${comments.length} valid comments for post: ${postId}`)
     return comments
   } catch (error) {
-    console.error('Error fetching comments:', error)
+    console.error(`❌ [${userId}] Error fetching comments:`, error)
     return []
   }
 }
@@ -304,19 +385,27 @@ serve(async (req) => {
     // Check environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const redditClientId = Deno.env.get('REDDIT_CLIENT_ID')
+    const redditClientSecret = Deno.env.get('REDDIT_CLIENT_SECRET')
     
     console.log('Environment check:')
     console.log('- SUPABASE_URL:', supabaseUrl ? 'present' : 'MISSING')
     console.log('- SUPABASE_SERVICE_ROLE_KEY:', serviceRoleKey ? 'present' : 'MISSING')
+    console.log('- REDDIT_CLIENT_ID:', redditClientId ? 'present' : 'MISSING')
+    console.log('- REDDIT_CLIENT_SECRET:', redditClientSecret ? 'present' : 'MISSING')
     
     if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error('Missing required environment variables')
+      throw new Error('Missing required Supabase environment variables')
+    }
+    
+    if (!redditClientId || !redditClientSecret) {
+      console.warn('⚠️ Reddit OAuth credentials missing - all requests will be unauthenticated')
     }
     
     // Create Supabase client
     console.log('Creating Supabase client with service role key...')
     const supabaseClient = createClient(supabaseUrl, serviceRoleKey)
-    console.log('✓ Supabase client created successfully')
+    console.log('✅ Supabase client created successfully')
 
     // Get current timestamp for comparison
     const currentTime = new Date()
@@ -432,22 +521,27 @@ serve(async (req) => {
 
     for (const search of searchesToProcess) {
       try {
-        console.log(`\n--- Processing keyword: "${search.keyword}" for user: ${search.user_id} ---`)
+        console.log(`\n🔍 === PROCESSING KEYWORD: "${search.keyword}" ===`)
+        console.log(`👤 User ID: ${search.user_id}`)
+        console.log(`⏰ Last searched: ${search.last_searched_at || 'never'}`)
+        console.log(`🔄 Search frequency: every ${search.search_frequency_hours} hours`)
         
         // Get valid Reddit token for this user
         const accessToken = await getValidRedditToken(supabaseClient, search.user_id)
         
         if (accessToken) {
-          console.log(`✓ Using authenticated Reddit API for user: ${search.user_id}`)
+          console.log(`✅ [${search.user_id}] AUTHENTICATED Reddit API access available`)
+          console.log(`✅ [${search.user_id}] Higher rate limits and better access`)
         } else {
-          console.log(`⚠ Using unauthenticated Reddit API for user: ${search.user_id} (rate limited)`)
+          console.log(`⚠️ [${search.user_id}] NO VALID TOKEN - using unauthenticated access`)
+          console.log(`⚠️ [${search.user_id}] Subject to strict rate limiting`)
         }
         
         // Search Reddit for the keyword
-        const posts = await searchRedditForKeyword(search.keyword, accessToken, 15)
+        const posts = await searchRedditForKeyword(search.keyword, accessToken, search.user_id, 15)
         let mentionsFound = 0
 
-        console.log(`Processing ${posts.length} posts...`)
+        console.log(`📝 Processing ${posts.length} posts for analysis...`)
 
         for (const post of posts) {
           try {
@@ -461,7 +555,7 @@ serve(async (req) => {
               .maybeSingle()
 
             if (existingMention) {
-              console.log(`⏭ Skipping existing post: ${post.id}`)
+              console.log(`⏭️ [${search.user_id}] Skipping existing post: ${post.id}`)
               continue // Skip if we already have this mention
             }
 
@@ -470,7 +564,8 @@ serve(async (req) => {
             const sentiment = await analyzeSentimentSimple(postText, search.keyword)
             const tags = extractTags(postText, search.keyword)
 
-            console.log(`Inserting new post mention: ${post.title.substring(0, 50)}...`)
+            console.log(`💾 [${search.user_id}] Inserting new post mention: ${post.title.substring(0, 50)}...`)
+            console.log(`📊 [${search.user_id}] Sentiment: ${sentiment}`)
 
             // Insert the mention
             const { error: insertError } = await supabaseClient
@@ -492,14 +587,14 @@ serve(async (req) => {
               })
 
             if (insertError) {
-              console.error(`❌ Error inserting post mention: ${insertError.message}`)
+              console.error(`❌ [${search.user_id}] Error inserting post mention: ${insertError.message}`)
             } else {
               mentionsFound++
-              console.log(`✓ Added post mention: ${post.title.substring(0, 50)}...`)
+              console.log(`✅ [${search.user_id}] Added post mention: ${post.title.substring(0, 50)}...`)
             }
 
             // Also check comments for mentions (limit to top 3 to avoid rate limits)
-            const comments = await getPostComments(post.subreddit, post.id, accessToken, 3)
+            const comments = await getPostComments(post.subreddit, post.id, accessToken, search.user_id, 3)
             
             for (const comment of comments) {
               if (comment.body.toLowerCase().includes(search.keyword.toLowerCase())) {
@@ -515,7 +610,7 @@ serve(async (req) => {
                   const commentSentiment = await analyzeSentimentSimple(comment.body, search.keyword)
                   const commentTags = extractTags(comment.body, search.keyword)
 
-                  console.log(`Inserting new comment mention from: ${comment.author}`)
+                  console.log(`💾 [${search.user_id}] Inserting new comment mention from: ${comment.author}`)
 
                   const { error: commentInsertError } = await supabaseClient
                     .from('user_mentions')
@@ -537,12 +632,12 @@ serve(async (req) => {
 
                   if (!commentInsertError) {
                     mentionsFound++
-                    console.log(`✓ Added comment mention from: ${comment.author}`)
+                    console.log(`✅ [${search.user_id}] Added comment mention from: ${comment.author}`)
                   } else {
-                    console.error(`❌ Error inserting comment mention: ${commentInsertError.message}`)
+                    console.error(`❌ [${search.user_id}] Error inserting comment mention: ${commentInsertError.message}`)
                   }
                 } else {
-                  console.log(`⏭ Skipping existing comment: ${comment.id}`)
+                  console.log(`⏭️ [${search.user_id}] Skipping existing comment: ${comment.id}`)
                 }
               }
             }
@@ -550,7 +645,7 @@ serve(async (req) => {
             // Add small delay between posts to be respectful to Reddit's API
             await new Promise(resolve => setTimeout(resolve, 500))
           } catch (postError) {
-            console.error(`❌ Error processing post ${post.id}:`, postError)
+            console.error(`❌ [${search.user_id}] Error processing post ${post.id}:`, postError)
           }
         }
 
@@ -558,8 +653,8 @@ serve(async (req) => {
         const nextSearchTime = new Date()
         nextSearchTime.setHours(nextSearchTime.getHours() + search.search_frequency_hours)
 
-        console.log(`Updating search record for keyword: ${search.keyword}`)
-        console.log(`Next search scheduled for: ${nextSearchTime.toISOString()}`)
+        console.log(`📝 [${search.user_id}] Updating search record for keyword: ${search.keyword}`)
+        console.log(`⏰ [${search.user_id}] Next search scheduled for: ${nextSearchTime.toISOString()}`)
 
         const { error: updateError } = await supabaseClient
           .from('keyword_searches')
@@ -572,12 +667,12 @@ serve(async (req) => {
           .eq('id', search.id)
 
         if (updateError) {
-          console.error(`❌ Error updating search record: ${updateError.message}`)
+          console.error(`❌ [${search.user_id}] Error updating search record: ${updateError.message}`)
         } else {
-          console.log(`✓ Updated search record successfully`)
+          console.log(`✅ [${search.user_id}] Updated search record successfully`)
         }
 
-        console.log(`✓ Found ${mentionsFound} new mentions for keyword: "${search.keyword}"`)
+        console.log(`🎉 [${search.user_id}] Found ${mentionsFound} new mentions for keyword: "${search.keyword}"`)
         totalMentionsFound += mentionsFound
         totalProcessed++
 
@@ -596,15 +691,15 @@ serve(async (req) => {
       }
     }
 
-    console.log(`\n--- Keyword monitoring completed ---`)
-    console.log(`Processed: ${totalProcessed} keywords`)
-    console.log(`Total new mentions found: ${totalMentionsFound}`)
+    console.log(`\n🏁 === KEYWORD MONITORING COMPLETED ===`)
+    console.log(`📊 Processed: ${totalProcessed} keywords`)
+    console.log(`📊 Total new mentions found: ${totalMentionsFound}`)
 
     // Update daily reputation scores
-    console.log('Updating daily reputation scores...')
+    console.log('📈 Updating daily reputation scores...')
     try {
       await supabaseClient.rpc('update_daily_reputation_scores')
-      console.log('✓ Daily reputation scores updated')
+      console.log('✅ Daily reputation scores updated')
     } catch (reputationError) {
       console.error('❌ Error updating reputation scores:', reputationError)
     }
