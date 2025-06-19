@@ -19,7 +19,8 @@ import {
   Plus,
   X,
   MessageSquare,
-  Brain
+  Brain,
+  Search
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import RedditAuthButton from '../components/RedditAuthButton';
@@ -42,6 +43,7 @@ interface UserSettings {
 
 const SettingsPage: React.FC = () => {
   const { user, signOut } = useAuth();
+  
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -78,6 +80,15 @@ const SettingsPage: React.FC = () => {
   const [newKeyword, setNewKeyword] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
 
+  // Keyword management state
+  const [newMonitorKeyword, setNewMonitorKeyword] = useState('');
+  const [newKeywordFrequency, setNewKeywordFrequency] = useState(24);
+  const [addingKeyword, setAddingKeyword] = useState(false);
+  const [triggeringSearch, setTriggeringSearch] = useState(false);
+  const [keywords, setKeywords] = useState<any[]>([]);
+  const [keywordsLoading, setKeywordsLoading] = useState(true);
+  const [keywordsError, setKeywordsError] = useState<string | null>(null);
+
   // Messages
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -104,7 +115,41 @@ const SettingsPage: React.FC = () => {
 
     // Load user settings from localStorage
     loadUserSettings();
+
+    // Load keywords
+    loadKeywords();
   }, []);
+
+  const loadKeywords = async () => {
+    try {
+      setKeywordsLoading(true);
+      setKeywordsError(null);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setKeywordsError('User not authenticated');
+        return;
+      }
+
+      const { data, error: fetchError } = await supabase
+        .from('keyword_searches')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      setKeywords(data || []);
+    } catch (err) {
+      console.error('Error fetching keywords:', err);
+      setKeywordsError(err instanceof Error ? err.message : 'Failed to fetch keywords');
+    } finally {
+      setKeywordsLoading(false);
+    }
+  };
 
   const loadUserSettings = () => {
     try {
@@ -295,6 +340,127 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleAddMonitorKeyword = async () => {
+    if (!newMonitorKeyword.trim()) {
+      setErrorMessage('Please enter a keyword to monitor');
+      return;
+    }
+
+    setAddingKeyword(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error: insertError } = await supabase
+        .from('keyword_searches')
+        .insert({
+          user_id: user.id,
+          keyword: newMonitorKeyword.trim(),
+          search_frequency_hours: newKeywordFrequency,
+          next_search_at: new Date().toISOString()
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      await loadKeywords();
+      setNewMonitorKeyword('');
+      setNewKeywordFrequency(24);
+      setSuccessMessage('Keyword added for monitoring!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Error adding keyword:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to add keyword');
+    }
+    
+    setAddingKeyword(false);
+  };
+
+  const handleRemoveMonitorKeyword = async (keywordId: string) => {
+    try {
+      const { error: deleteError } = await supabase
+        .from('keyword_searches')
+        .delete()
+        .eq('id', keywordId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      await loadKeywords();
+      setSuccessMessage('Keyword removed from monitoring');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('Error removing keyword:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to remove keyword');
+    }
+  };
+
+  const toggleKeyword = async (keywordId: string, isActive: boolean) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('keyword_searches')
+        .update({ is_active: isActive })
+        .eq('id', keywordId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      await loadKeywords();
+    } catch (err) {
+      console.error('Error toggling keyword:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to toggle keyword');
+    }
+  };
+
+  const handleTriggerSearch = async () => {
+    setTriggeringSearch(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/keyword-monitor`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to trigger search: ${response.statusText}`);
+      }
+
+      await loadKeywords();
+      setSuccessMessage('Manual search completed! Check the Mentions page for new results.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err) {
+      console.error('Error triggering search:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to trigger search');
+    }
+    
+    setTriggeringSearch(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300">
       
@@ -349,7 +515,183 @@ const SettingsPage: React.FC = () => {
           </div>
         )}
 
+        {keywordsError && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center space-x-3">
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+            <p className="text-red-700 dark:text-red-300 text-sm">{keywordsError}</p>
+          </div>
+        )}
+
         <div className="space-y-8">
+          {/* Keyword Monitoring Section - Moved to top */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-6">
+              <Search className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Keyword Monitoring</h2>
+            </div>
+
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Set up keywords to monitor across Reddit. We'll automatically search for mentions and analyze sentiment.
+            </p>
+
+            {/* Add New Keyword */}
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add New Keyword</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Keyword to Monitor
+                  </label>
+                  <input
+                    type="text"
+                    value={newMonitorKeyword}
+                    onChange={(e) => setNewMonitorKeyword(e.target.value)}
+                    placeholder="Enter keyword (e.g., your brand name)"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-800"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Search Frequency (hours)
+                  </label>
+                  <select
+                    value={newKeywordFrequency}
+                    onChange={(e) => setNewKeywordFrequency(parseInt(e.target.value))}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                  >
+                    <option value={1}>Every hour</option>
+                    <option value={6}>Every 6 hours</option>
+                    <option value={12}>Every 12 hours</option>
+                    <option value={24}>Daily</option>
+                    <option value={168}>Weekly</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleAddMonitorKeyword}
+                  disabled={addingKeyword || !newMonitorKeyword.trim()}
+                  className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                    addingKeyword || !newMonitorKeyword.trim()
+                      ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
+                      : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
+                  }`}
+                >
+                  {addingKeyword ? (
+                    <>
+                      <Loader className="h-5 w-5 animate-spin" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-5 w-5" />
+                      <span>Add Keyword</span>
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  onClick={handleTriggerSearch}
+                  disabled={triggeringSearch}
+                  className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                    triggeringSearch
+                      ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
+                  }`}
+                >
+                  {triggeringSearch ? (
+                    <>
+                      <Loader className="h-5 w-5 animate-spin" />
+                      <span>Searching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-5 w-5" />
+                      <span>Search Now</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Active Keywords List */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Active Keywords ({keywords.length})
+              </h3>
+              
+              {keywordsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader className="h-8 w-8 text-orange-500 animate-spin" />
+                  <span className="ml-3 text-gray-600 dark:text-gray-300">Loading keywords...</span>
+                </div>
+              ) : keywords.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No keywords being monitored yet. Add some to get started!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {keywords.map((keyword) => (
+                    <div
+                      key={keyword.id}
+                      className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {keyword.keyword}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            keyword.is_active 
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
+                          }`}>
+                            {keyword.is_active ? 'Active' : 'Paused'}
+                          </span>
+                        </div>
+                        
+                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                          <div>Frequency: Every {keyword.search_frequency_hours} hours</div>
+                          <div>Total mentions found: {keyword.total_mentions_found}</div>
+                          {keyword.last_searched_at && (
+                            <div>Last searched: {new Date(keyword.last_searched_at).toLocaleString()}</div>
+                          )}
+                          {keyword.last_error && (
+                            <div className="text-red-600 dark:text-red-400">Error: {keyword.last_error}</div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => toggleKeyword(keyword.id, !keyword.is_active)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            keyword.is_active
+                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
+                              : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                          }`}
+                        >
+                          {keyword.is_active ? 'Pause' : 'Resume'}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleRemoveMonitorKeyword(keyword.id)}
+                          className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Account Information - Moved to top */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-6">

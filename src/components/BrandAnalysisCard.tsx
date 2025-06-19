@@ -21,7 +21,7 @@ interface BrandAnalysisCardProps {
   recommendations: Recommendation[];
 }
 
-const BrandAnalysisCard: React.FC<BrandAnalysisCardProps> = ({ metrics, recommendations }) => {
+const BrandAnalysisCard: React.FC<BrandAnalysisCardProps> = ({ metrics, recommendations = [] }) => {
   const getRecommendationIcon = (type: string) => {
     switch (type) {
       case 'critical':

@@ -1,4 +1,5 @@
 import React from 'react';
+import { BarChart3 } from 'lucide-react';
 
 interface SentimentData {
   day: string;
@@ -13,8 +14,8 @@ interface SentimentChartProps {
   title: string;
 }
 
-const SentimentChart: React.FC<SentimentChartProps> = ({ data, title }) => {
-  const maxValue = Math.max(...data.map(d => d.positive + d.negative + d.neutral + d.mixed));
+const SentimentChart: React.FC<SentimentChartProps> = ({ data = [], title }) => {
+  const maxValue = data.length > 0 ? Math.max(...data.map(d => d.positive + d.negative + d.neutral + d.mixed)) : 1;
   
   return (
     <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
@@ -42,7 +43,16 @@ const SentimentChart: React.FC<SentimentChartProps> = ({ data, title }) => {
         </div>
         
         {/* Chart */}
-        <div className="flex items-end justify-between h-48 space-x-2">
+        {data.length === 0 ? (
+          <div className="flex items-center justify-center h-48 text-gray-500 dark:text-gray-400">
+            <div className="text-center">
+              <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>No sentiment data available</p>
+              <p className="text-sm mt-1">Data will appear as mentions are collected</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-end justify-between h-48 space-x-2">
           {data.map((item, index) => {
             const total = item.positive + item.negative + item.neutral + item.mixed;
             const height = (total / maxValue) * 100;
@@ -97,7 +107,8 @@ const SentimentChart: React.FC<SentimentChartProps> = ({ data, title }) => {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

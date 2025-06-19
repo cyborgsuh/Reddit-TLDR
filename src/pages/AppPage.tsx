@@ -14,7 +14,7 @@ import { AnalysisResult, AggregatedResult, SentimentCounts, RedditAuthState } fr
 import { RedditAuth } from '../utils/reddit-auth';
 
 const AppPage: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, session, signOut } = useAuth();
   
   // Check if this is the auth callback route
   const isAuthCallback = window.location.pathname === '/auth/callback';

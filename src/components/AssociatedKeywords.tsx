@@ -1,7 +1,7 @@
 import React from 'react';
 import { Hash, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
-interface Keyword {
+interface KeywordInsight {
   keyword: string;
   sentiment: 'positive' | 'negative' | 'mixed' | 'neutral';
   mentions: number;
@@ -9,10 +9,10 @@ interface Keyword {
 }
 
 interface AssociatedKeywordsProps {
-  keywords: Keyword[];
+  keywords: KeywordInsight[];
 }
 
-const AssociatedKeywords: React.FC<AssociatedKeywordsProps> = ({ keywords }) => {
+const AssociatedKeywords: React.FC<AssociatedKeywordsProps> = ({ keywords = [] }) => {
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
       case 'positive':
@@ -48,7 +48,14 @@ const AssociatedKeywords: React.FC<AssociatedKeywordsProps> = ({ keywords }) => 
       </div>
 
       <div className="space-y-4">
-        {keywords.map((keyword, index) => (
+        {keywords.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <Hash className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>No keyword data available yet.</p>
+            <p className="text-sm mt-2">Start monitoring keywords to see insights here.</p>
+          </div>
+        ) : (
+          keywords.map((keyword, index) => (
           <div
             key={index}
             className="group p-4 rounded-xl bg-gray-50/50 dark:bg-gray-700/50 hover:bg-gray-100/50 dark:hover:bg-gray-600/50 transition-all duration-200 border border-gray-200/30 dark:border-gray-600/30"
@@ -80,13 +87,16 @@ const AssociatedKeywords: React.FC<AssociatedKeywordsProps> = ({ keywords }) => 
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200/50 dark:border-orange-800/50">
         <p className="text-sm text-gray-700 dark:text-gray-300">
-          <span className="font-semibold">Insight:</span> Your AI integration keyword is showing the highest growth at +45.6%, 
-          indicating strong market interest in your new features.
+          {keywords.length > 0 
+            ? `Your "${keywords[0]?.keyword}" keyword has ${keywords[0]?.mentions} mentions with ${keywords[0]?.sentiment} sentiment.`
+            : "Set up keyword monitoring to get AI-powered insights about your brand performance."
+          }
         </p>
       </div>
     </div>

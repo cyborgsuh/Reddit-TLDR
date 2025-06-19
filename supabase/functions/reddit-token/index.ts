@@ -7,14 +7,24 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('=== Reddit Token Function Invoked ===')
+  console.log('Method:', req.method)
+  console.log('URL:', req.url)
+  
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { code, redirect_uri } = await req.json()
+    console.log('Parsing request body...')
+    const { code, redirect_uri, user_id } = await req.json()
+    console.log('Received code:', code ? 'present' : 'missing')
+    console.log('Received redirect_uri:', redirect_uri)
+    console.log('Received user_id:', user_id ? 'present' : 'missing')
 
     if (!code || !redirect_uri) {
+      console.error('Missing required parameters:', { code: !!code, redirect_uri: !!redirect_uri })
       return new Response(
         JSON.stringify({ error: 'Missing code or redirect_uri' }),
         { 
@@ -27,7 +37,11 @@ serve(async (req) => {
     const clientId = Deno.env.get('REDDIT_CLIENT_ID')
     const clientSecret = Deno.env.get('REDDIT_CLIENT_SECRET')
 
+    console.log('Reddit Client ID:', clientId ? 'present' : 'missing')
+    console.log('Reddit Client Secret:', clientSecret ? 'present' : 'missing')
+
     if (!clientId || !clientSecret) {
+      console.error('Reddit credentials not configured in environment')
       return new Response(
         JSON.stringify({ error: 'Reddit credentials not configured' }),
         { 
@@ -38,6 +52,7 @@ serve(async (req) => {
     }
 
     // Exchange authorization code for access token
+    console.log('Attempting token exchange with Reddit...')
     const tokenResponse = await fetch('https://www.reddit.com/api/v1/access_token', {
       method: 'POST',
       headers: {
@@ -52,9 +67,12 @@ serve(async (req) => {
       }),
     })
 
+    console.log('Reddit token response status:', tokenResponse.status)
+    console.log('Reddit token response status text:', tokenResponse.statusText)
+
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      console.error('Reddit token exchange error:', errorText)
+      console.error('Reddit token exchange failed with error:', errorText)
       return new Response(
         JSON.stringify({ error: 'Token exchange failed', details: errorText }),
         { 
@@ -65,8 +83,15 @@ serve(async (req) => {
     }
 
     const tokenData = await tokenResponse.json()
+    console.log('Received token data:', {
+      access_token: tokenData.access_token ? 'present' : 'missing',
+      refresh_token: tokenData.refresh_token ? 'present' : 'missing',
+      expires_in: tokenData.expires_in,
+      scope: tokenData.scope
+    })
 
     // Get user info to store username
+    console.log('Fetching Reddit user info...')
     const userResponse = await fetch('https://oauth.reddit.com/api/v1/me', {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`,
@@ -78,35 +103,51 @@ serve(async (req) => {
     if (userResponse.ok) {
       const userData = await userResponse.json()
       username = userData.name
+      console.log('Reddit username retrieved:', username)
+    } else {
+      console.warn('Failed to fetch Reddit user info:', userResponse.status, userResponse.statusText)
     }
 
-    // Store credentials in Supabase if user is authenticated
-    const authHeader = req.headers.get('Authorization')
-    if (authHeader) {
+    // Store credentials in Supabase if user_id is provided
+    if (user_id) {
+      console.log('Creating Supabase client with service role key...')
       const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-        { global: { headers: { Authorization: authHeader } } }
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       )
 
-      const { data: { user } } = await supabaseClient.auth.getUser()
+      console.log('Attempting to upsert Reddit credentials for user:', user_id)
       
-      if (user) {
-        const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
+      const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
+      console.log('Token expires at:', expiresAt)
+      
+      const { data: upsertData, error: upsertError } = await supabaseClient
+        .from('reddit_credentials')
+        .upsert({
+          user_id: user_id,
+          reddit_username: username || 'unknown',
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: expiresAt,
+          scope: tokenData.scope || 'read'
+        })
+        .select()
+
+      if (upsertError) {
+        console.error('Supabase upsert error:', upsertError)
+        console.error('Error details:', JSON.stringify(upsertError, null, 2))
         
-        await supabaseClient
-          .from('reddit_credentials')
-          .upsert({
-            user_id: user.id,
-            reddit_username: username || 'unknown',
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
-            expires_at: expiresAt,
-            scope: tokenData.scope || 'read'
-          })
+        // Don't fail the entire request if database storage fails
+        console.warn('Continuing despite database storage failure')
+      } else {
+        console.log('Successfully upserted Reddit credentials for user:', user_id)
+        console.log('Upsert result:', upsertData)
       }
+    } else {
+      console.warn('No user_id provided - credentials not stored in database')
     }
 
+    console.log('=== Reddit Token Function Completed Successfully ===')
     return new Response(
       JSON.stringify({
         ...tokenData,
@@ -117,7 +158,9 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('=== Reddit Token Function Error ===')
     console.error('Error in reddit-token function:', error)
+    console.error('Error stack:', error.stack)
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 

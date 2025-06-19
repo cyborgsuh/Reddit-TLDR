@@ -4,18 +4,21 @@ import Navigation from '../components/Navigation';
 import DashboardCard from '../components/DashboardCard';
 import SentimentChart from '../components/SentimentChart';
 import RecentMentions from '../components/RecentMentions';
-import DarkModeToggle from '../components/DarkModeToggle';
+import { useDashboardData } from '../hooks/useDashboardData';
 import { 
   Shield, 
   Search, 
   TrendingUp, 
   Brain,
   Sparkles,
-  Calendar
+  Calendar,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { data: dashboardData, loading: dashboardLoading, error: dashboardError, refetch } = useDashboardData();
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -39,7 +42,6 @@ const DashboardPage: React.FC = () => {
   }, [isDark]);
 
 
-  // Mock data - replace with real data later
   const userName = user?.email?.split('@')[0] || 'John';
   const currentTime = new Date().toLocaleString('en-US', {
     weekday: 'long',
@@ -50,48 +52,8 @@ const DashboardPage: React.FC = () => {
     minute: '2-digit'
   });
 
-  const sentimentData = [
-    { day: 'Mon', positive: 45, negative: 15, neutral: 25, mixed: 15 },
-    { day: 'Tue', positive: 52, negative: 12, neutral: 28, mixed: 8 },
-    { day: 'Wed', positive: 38, negative: 22, neutral: 30, mixed: 10 },
-    { day: 'Thu', positive: 48, negative: 18, neutral: 24, mixed: 10 },
-    { day: 'Fri', positive: 55, negative: 10, neutral: 25, mixed: 10 },
-    { day: 'Sat', positive: 42, negative: 20, neutral: 28, mixed: 10 },
-    { day: 'Sun', positive: 50, negative: 15, neutral: 25, mixed: 10 },
-  ];
-
-  const recentMentions = [
-    {
-      id: '1',
-      author: 'sarah_marketing',
-      content: 'Just discovered @YourBrand and I am absolutely loving their customer service! The response time is incredible and the team really cares about solving problems. Highly recommended! 👍',
-      sentiment: 'positive' as const,
-      subreddit: 'CustomerService',
-      timestamp: '2 hours ago',
-      score: 24
-    },
-    {
-      id: '2',
-      author: 'mike_dev',
-      content: 'Having some issues with @YourBrand product lately. The latest update seems to have broken some features I rely on daily. Hope they fix this soon.',
-      sentiment: 'negative' as const,
-      subreddit: 'TechSupport',
-      timestamp: '4 hours ago',
-      score: 8
-    },
-    {
-      id: '3',
-      author: 'alex_user',
-      content: 'Mixed feelings about the new @YourBrand features. Some are great, others feel rushed. The UI is beautiful but functionality could be better.',
-      sentiment: 'mixed' as const,
-      subreddit: 'ProductReviews',
-      timestamp: '6 hours ago',
-      score: 15
-    }
-  ];
-
-  const handleViewAllMentions = () => {
-    // This is now handled by the Link in RecentMentions component
+  const handleRefresh = async () => {
+    await refetch();
   };
 
   return (
@@ -117,39 +79,61 @@ const DashboardPage: React.FC = () => {
                 <div className="text-left lg:text-right">
                   <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     <Calendar className="h-4 w-4" />
-                    <span className="hidden sm:inline">Last updated: {currentTime}</span>
-                    <span className="sm:hidden">Updated: {new Date().toLocaleDateString()}</span>
+                    <span className="hidden sm:inline">
+                      Last updated: {dashboardData?.lastUpdated ? new Date(dashboardData.lastUpdated).toLocaleString() : currentTime}
+                    </span>
+                    <span className="sm:hidden">
+                      Updated: {dashboardData?.lastUpdated ? new Date(dashboardData.lastUpdated).toLocaleDateString() : new Date().toLocaleDateString()}
+                    </span>
                   </div>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={dashboardLoading}
+                    className="mt-2 lg:mt-0 lg:ml-4 flex items-center space-x-2 px-3 py-1.5 bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 text-orange-700 dark:text-orange-400 rounded-lg transition-all duration-200 text-sm"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${dashboardLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Error Message */}
+          {dashboardError && (
+            <div className="mb-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center space-x-3">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+              <p className="text-red-700 dark:text-red-300 text-sm">
+                Error loading dashboard data: {dashboardError}
+              </p>
+            </div>
+          )}
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <DashboardCard
               title="Reputation Score"
-              value="78"
-              change="+5.2% this week"
-              changeType="positive"
+              value={dashboardLoading ? "..." : (dashboardData?.reputationScore?.toString() || "50")}
+              change={dashboardLoading ? "..." : (dashboardData?.reputationChange ? `${dashboardData.reputationChange > 0 ? '+' : ''}${dashboardData.reputationChange} points` : "No change")}
+              changeType={dashboardData?.reputationChange && dashboardData.reputationChange > 0 ? "positive" : dashboardData?.reputationChange && dashboardData.reputationChange < 0 ? "negative" : "neutral"}
               icon={Shield}
               description="Overall brand sentiment score"
             />
             
             <DashboardCard
               title="Total Searches"
-              value="1,247"
-              change="+12% vs last week"
-              changeType="positive"
+              value={dashboardLoading ? "..." : (dashboardData?.totalMentions?.toLocaleString() || "0")}
+              change="Last 24 hours"
+              changeType="neutral"
               icon={Search}
-              description="Keyword mentions in 24h"
+              description="New mentions found"
             />
             
             <DashboardCard
               title="Positive Ratio"
-              value="68%"
-              change="+8% vs last week"
-              changeType="positive"
+              value={dashboardLoading ? "..." : `${dashboardData?.positiveRatio || 0}%`}
+              change="Of all mentions"
+              changeType={dashboardData?.positiveRatio && dashboardData.positiveRatio > 60 ? "positive" : dashboardData?.positiveRatio && dashboardData.positiveRatio < 40 ? "negative" : "neutral"}
               icon={TrendingUp}
               description="Positive vs negative sentiment"
             />
@@ -167,9 +151,19 @@ const DashboardPage: React.FC = () => {
               
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/50">
                 <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-                  Your brand reputation has shown steady improvement over the past week, with a 5.2% increase in overall sentiment score. 
-                  The launch of your new AI feature has generated significant positive buzz, particularly among productivity-focused users. 
-                  However, there are some concerns about recent product updates affecting core functionality that should be addressed promptly.
+                  {dashboardLoading ? (
+                    "Loading AI insights..."
+                  ) : dashboardData ? (
+                    `Your brand reputation score is currently ${dashboardData.reputationScore}/100. ` +
+                    `You have ${dashboardData.totalMentions} new mentions in the last 24 hours, with ${dashboardData.positiveRatio}% being positive. ` +
+                    (dashboardData.reputationChange > 0 
+                      ? `Your reputation has improved by ${dashboardData.reputationChange} points recently.`
+                      : dashboardData.reputationChange < 0 
+                        ? `Your reputation has decreased by ${Math.abs(dashboardData.reputationChange)} points recently.`
+                        : "Your reputation score has remained stable.")
+                  ) : (
+                    "Unable to load AI insights at this time. Please try refreshing the page."
+                  )}
                 </p>
               </div>
             </div>
@@ -179,13 +173,13 @@ const DashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-20 sm:mb-0">
             {/* Sentiment Chart */}
             <SentimentChart 
-              data={sentimentData}
+              data={dashboardData?.sentimentTrend || []}
               title="Sentiment Trend (7 days)"
             />
             
             {/* Recent Mentions */}
             <RecentMentions 
-              mentions={recentMentions}
+              mentions={dashboardData?.recentMentions || []}
             />
           </div>
         </div>
