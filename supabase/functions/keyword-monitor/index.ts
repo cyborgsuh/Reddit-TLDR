@@ -288,39 +288,101 @@ function extractTags(text: string, keyword: string): string[] {
 }
 
 serve(async (req) => {
+  console.log('=== KEYWORD MONITOR FUNCTION STARTED ===')
+  console.log('Request method:', req.method)
+  console.log('Request URL:', req.url)
+  console.log('Timestamp:', new Date().toISOString())
+  
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     console.log('Starting keyword monitoring process...')
     
-    // This function can be called manually or via cron
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    // Check environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    console.log('Environment check:')
+    console.log('- SUPABASE_URL:', supabaseUrl ? 'present' : 'MISSING')
+    console.log('- SUPABASE_SERVICE_ROLE_KEY:', serviceRoleKey ? 'present' : 'MISSING')
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Missing required environment variables')
+    }
+    
+    // Create Supabase client
+    console.log('Creating Supabase client with service role key...')
+    const supabaseClient = createClient(supabaseUrl, serviceRoleKey)
+    console.log('✓ Supabase client created successfully')
+
+    // Get current timestamp for comparison
+    const currentTime = new Date().toISOString()
+    console.log('Current time for comparison:', currentTime)
 
     // Get all active keyword searches that need to be processed
+    console.log('Fetching keyword searches from database...')
+    console.log('Query conditions:')
+    console.log('- is_active = true')
+    console.log('- next_search_at <= current time')
+    
     const { data: searches, error: searchError } = await supabaseClient
       .from('keyword_searches')
       .select('*')
       .eq('is_active', true)
-      .lte('next_search_at', new Date().toISOString())
+      .lte('next_search_at', currentTime)
+
+    console.log('Database query completed')
+    console.log('Search error:', searchError ? JSON.stringify(searchError, null, 2) : 'none')
+    console.log('Raw search results:', searches ? JSON.stringify(searches, null, 2) : 'null')
+    console.log('Number of searches found:', searches?.length || 0)
 
     if (searchError) {
-      console.error('Error fetching searches:', searchError)
+      console.error('❌ Error fetching searches from database:', searchError)
       throw new Error(`Error fetching searches: ${searchError.message}`)
     }
 
-    console.log(`Processing ${searches?.length || 0} keyword searches`)
+    if (!searches || searches.length === 0) {
+      console.log('⚠️ No keyword searches found that meet criteria')
+      
+      // Let's also check what keywords exist in the database
+      console.log('Checking all keywords in database for debugging...')
+      const { data: allKeywords, error: allKeywordsError } = await supabaseClient
+        .from('keyword_searches')
+        .select('*')
+      
+      console.log('All keywords in database:', allKeywords ? JSON.stringify(allKeywords, null, 2) : 'null')
+      console.log('All keywords error:', allKeywordsError ? JSON.stringify(allKeywordsError, null, 2) : 'none')
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          processed: 0,
+          totalMentionsFound: 0,
+          message: 'No keywords found that need processing',
+          debug: {
+            currentTime,
+            allKeywordsCount: allKeywords?.length || 0,
+            allKeywords: allKeywords || []
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log(`✓ Found ${searches.length} keyword searches to process`)
 
     let totalProcessed = 0
     let totalMentionsFound = 0
 
-    for (const search of searches || []) {
+    for (const search of searches) {
       try {
         console.log(`\n--- Processing keyword: "${search.keyword}" for user: ${search.user_id} ---`)
+        console.log('Search details:', JSON.stringify(search, null, 2))
         
         // Get valid Reddit token for this user
         const accessToken = await getValidRedditToken(supabaseClient, search.user_id)
@@ -349,6 +411,7 @@ serve(async (req) => {
               .maybeSingle()
 
             if (existingMention) {
+              console.log(`⏭ Skipping existing post: ${post.id}`)
               continue // Skip if we already have this mention
             }
 
@@ -356,6 +419,8 @@ serve(async (req) => {
             const postText = `${post.title} ${post.selftext}`.trim()
             const sentiment = await analyzeSentimentSimple(postText, search.keyword)
             const tags = extractTags(postText, search.keyword)
+
+            console.log(`Inserting new post mention: ${post.title.substring(0, 50)}...`)
 
             // Insert the mention
             const { error: insertError } = await supabaseClient
@@ -377,7 +442,7 @@ serve(async (req) => {
               })
 
             if (insertError) {
-              console.error(`Error inserting post mention: ${insertError.message}`)
+              console.error(`❌ Error inserting post mention: ${insertError.message}`)
             } else {
               mentionsFound++
               console.log(`✓ Added post mention: ${post.title.substring(0, 50)}...`)
@@ -399,6 +464,8 @@ serve(async (req) => {
                 if (!existingComment) {
                   const commentSentiment = await analyzeSentimentSimple(comment.body, search.keyword)
                   const commentTags = extractTags(comment.body, search.keyword)
+
+                  console.log(`Inserting new comment mention from: ${comment.author}`)
 
                   const { error: commentInsertError } = await supabaseClient
                     .from('user_mentions')
@@ -422,8 +489,10 @@ serve(async (req) => {
                     mentionsFound++
                     console.log(`✓ Added comment mention from: ${comment.author}`)
                   } else {
-                    console.error(`Error inserting comment mention: ${commentInsertError.message}`)
+                    console.error(`❌ Error inserting comment mention: ${commentInsertError.message}`)
                   }
+                } else {
+                  console.log(`⏭ Skipping existing comment: ${comment.id}`)
                 }
               }
             }
@@ -431,13 +500,16 @@ serve(async (req) => {
             // Add small delay between posts to be respectful to Reddit's API
             await new Promise(resolve => setTimeout(resolve, 500))
           } catch (postError) {
-            console.error(`Error processing post ${post.id}:`, postError)
+            console.error(`❌ Error processing post ${post.id}:`, postError)
           }
         }
 
         // Update the search record
         const nextSearchTime = new Date()
         nextSearchTime.setHours(nextSearchTime.getHours() + search.search_frequency_hours)
+
+        console.log(`Updating search record for keyword: ${search.keyword}`)
+        console.log(`Next search scheduled for: ${nextSearchTime.toISOString()}`)
 
         const { error: updateError } = await supabaseClient
           .from('keyword_searches')
@@ -450,7 +522,9 @@ serve(async (req) => {
           .eq('id', search.id)
 
         if (updateError) {
-          console.error(`Error updating search record: ${updateError.message}`)
+          console.error(`❌ Error updating search record: ${updateError.message}`)
+        } else {
+          console.log(`✓ Updated search record successfully`)
         }
 
         console.log(`✓ Found ${mentionsFound} new mentions for keyword: "${search.keyword}"`)
@@ -458,7 +532,8 @@ serve(async (req) => {
         totalProcessed++
 
       } catch (error) {
-        console.error(`Error processing keyword "${search.keyword}":`, error)
+        console.error(`❌ Error processing keyword "${search.keyword}":`, error)
+        console.error('Error stack:', error.stack)
         
         // Update search record with error
         await supabaseClient
@@ -481,22 +556,29 @@ serve(async (req) => {
       await supabaseClient.rpc('update_daily_reputation_scores')
       console.log('✓ Daily reputation scores updated')
     } catch (reputationError) {
-      console.error('Error updating reputation scores:', reputationError)
+      console.error('❌ Error updating reputation scores:', reputationError)
     }
+
+    console.log('=== KEYWORD MONITOR FUNCTION COMPLETED SUCCESSFULLY ===')
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         processed: totalProcessed,
         totalMentionsFound: totalMentionsFound,
-        message: 'Keyword monitoring completed successfully'
+        message: 'Keyword monitoring completed successfully',
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
   } catch (error) {
+    console.error('=== KEYWORD MONITOR FUNCTION ERROR ===')
     console.error('Error in keyword-monitor function:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error details:', JSON.stringify(error, null, 2))
+    
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 
