@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import { RedditAuth } from '../utils/reddit-auth';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AuthCallbackProps {
   onAuthComplete: (success: boolean) => void;
 }
 
 const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthComplete }) => {
+  const { session } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Processing Reddit authentication...');
 
@@ -39,7 +41,7 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthComplete }) => {
 
         console.log('AuthCallback: Calling redditAuth.handleCallback...');
         const redditAuth = RedditAuth.getInstance();
-        const success = await redditAuth.handleCallback(code, state);
+        const success = await redditAuth.handleCallback(code, state, session?.access_token);
         
         console.log('AuthCallback: redditAuth.handleCallback returned success:', success);
         
@@ -70,7 +72,7 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthComplete }) => {
 
     console.log('AuthCallback: Component mounted, starting authentication flow');
     handleCallback();
-  }, [onAuthComplete]);
+  }, [onAuthComplete, session]);
 
   const getIcon = () => {
     switch (status) {
