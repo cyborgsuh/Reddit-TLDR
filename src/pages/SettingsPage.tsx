@@ -61,6 +61,7 @@ const SettingsPage: React.FC = () => {
   });
   const [savingGeminiKey, setSavingGeminiKey] = useState(false);
   const [loadingGeminiKey, setLoadingGeminiKey] = useState(true);
+  const [deletingGeminiKey, setDeletingGeminiKey] = useState(false);
 
   // Reddit OAuth state
   const [redditAuthState, setRedditAuthState] = useState<RedditAuthState>({
@@ -281,6 +282,36 @@ const SettingsPage: React.FC = () => {
       setErrorMessage('An unexpected error occurred');
     } finally {
       setSavingGeminiKey(false);
+    }
+  };
+
+  const handleDeleteGeminiKey = async () => {
+    setDeletingGeminiKey(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setErrorMessage('User not authenticated');
+        setDeletingGeminiKey(false);
+        return;
+      }
+      // Delete the user's row from user_settings
+      const { error: deleteError } = await supabase
+        .from('user_settings')
+        .delete()
+        .eq('user_id', user.id);
+      if (deleteError) {
+        setErrorMessage('Failed to delete API key');
+      } else {
+        setGeminiKey('');
+        setGeminiKeyStatus({ hasKey: false, status: 'not_set' });
+        setSuccessMessage('Gemini API key deleted and settings reset.');
+      }
+    } catch (error) {
+      setErrorMessage('Failed to delete API key');
+    } finally {
+      setDeletingGeminiKey(false);
     }
   };
 
@@ -1028,27 +1059,50 @@ const SettingsPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <button
-                    onClick={handleSaveGeminiKey}
-                    disabled={savingGeminiKey || !geminiKey.trim()}
-                    className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                      savingGeminiKey || !geminiKey.trim()
-                        ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
-                        : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 dark:from-orange-700 dark:to-amber-700 dark:hover:from-orange-800 dark:hover:to-amber-800 text-white transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
-                    }`}
-                  >
-                    {savingGeminiKey ? (
-                      <>
-                        <Loader className="h-5 w-5 animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-5 w-5" />
-                        <span>Save API Key</span>
-                      </>
-                    )}
-                  </button>
+                  {/* Only show Save button if no key is set */}
+                  {!geminiKeyStatus.hasKey && (
+                    <button
+                      onClick={handleSaveGeminiKey}
+                      disabled={savingGeminiKey || !geminiKey.trim()}
+                      className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                        savingGeminiKey || !geminiKey.trim()
+                          ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
+                          : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 dark:from-orange-700 dark:to-amber-700 dark:hover:from-orange-800 dark:hover:to-amber-800 text-white transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
+                      }`}
+                    >
+                      {savingGeminiKey ? (
+                        <>
+                          <Loader className="h-5 w-5 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-5 w-5" />
+                          <span>Save API Key</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {geminiKeyStatus.hasKey && (
+                    <button
+                      onClick={handleDeleteGeminiKey}
+                      disabled={deletingGeminiKey}
+                      className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-red-600 hover:bg-red-700 text-white mt-4 disabled:bg-gray-400`}
+                    >
+                      {deletingGeminiKey ? (
+                        <>
+                          <Loader className="h-5 w-5 animate-spin" />
+                          <span>Deleting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-5 w-5" />
+                          <span>Delete API Key</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </>
             )}
