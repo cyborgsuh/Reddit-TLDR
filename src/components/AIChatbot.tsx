@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, Bot, User, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageSquare, Send, Bot, User, Minimize2, Maximize2, Hash, ChevronDown } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '../lib/supabase';
 
@@ -16,12 +16,33 @@ interface ChatHistory {
   parts: { text: string }[];
 }
 
+interface UserKeyword {
+  id: string;
+  keyword: string;
+  total_mentions_found: number;
+  last_searched_at: string | null;
+  is_active: boolean;
+}
+
+interface RedditMention {
+  id: string;
+  content: string;
+  sentiment: string;
+  author: string;
+  subreddit: string;
+  score: number;
+  num_comments: number;
+  mentioned_at: string;
+  url: string;
+  tags: string[];
+}
+
 const AIChatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'bot',
-      content: "Hi! I'm your AI brand assistant. I can help you analyze your brand performance, suggest improvements, and answer questions about your Reddit presence. What would you like to know?",
+      content: "Hi! I'm BrandSage, your AI brand assistant. I can help you analyze your brand performance and provide insights based on your Reddit monitoring data. Let me know which keyword you'd like to discuss, or ask me anything about your brand reputation!",
       timestamp: new Date()
     }
   ]);
@@ -30,6 +51,13 @@ const AIChatbot: React.FC = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [loadingApiKey, setLoadingApiKey] = useState(true);
+  const [userKeywords, setUserKeywords] = useState<UserKeyword[]>([]);
+  const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
+  const [keywordMentions, setKeywordMentions] = useState<RedditMention[]>([]);
+  const [showKeywordSelector, setShowKeywordSelector] = useState(false);
+  const [loadingKeywords, setLoadingKeywords] = useState(false);
+  const [loadingMentions, setLoadingMentions] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const chatRef = useRef<any>(null);
@@ -43,9 +71,9 @@ const AIChatbot: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Load user's saved API key on component mount
+  // Load user's saved API key and keywords on component mount
   useEffect(() => {
-    const loadSavedApiKey = async () => {
+    const loadUserData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -54,6 +82,7 @@ const AIChatbot: React.FC = () => {
           return;
         }
 
+        // Load API key
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-gemini-key`, {
           method: 'GET',
           headers: {
@@ -69,15 +98,90 @@ const AIChatbot: React.FC = () => {
             initializeChat(data.apiKey);
           }
         }
+
+        // Load user keywords
+        await loadUserKeywords();
       } catch (error) {
-        console.error('Error loading saved API key:', error);
+        console.error('Error loading user data:', error);
       } finally {
         setLoadingApiKey(false);
       }
     };
 
-    loadSavedApiKey();
+    loadUserData();
   }, []);
+
+  const loadUserKeywords = async () => {
+    try {
+      setLoadingKeywords(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      const { data: keywords, error } = await supabase
+        .from('keyword_searches')
+        .select('id, keyword, total_mentions_found, last_searched_at, is_active')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('total_mentions_found', { ascending: false });
+
+      if (error) {
+        console.error('Error loading keywords:', error);
+        return;
+      }
+
+      setUserKeywords(keywords || []);
+    } catch (error) {
+      console.error('Error loading user keywords:', error);
+    } finally {
+      setLoadingKeywords(false);
+    }
+  };
+
+  const loadKeywordMentions = async (keyword: string) => {
+    try {
+      setLoadingMentions(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      // Get recent mentions for the selected keyword (last 50 mentions)
+      const { data: mentions, error } = await supabase
+        .from('user_mentions')
+        .select('id, content, sentiment, author, subreddit, score, num_comments, mentioned_at, url, tags')
+        .eq('user_id', user.id)
+        .eq('keyword', keyword)
+        .order('mentioned_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Error loading mentions:', error);
+        return;
+      }
+
+      setKeywordMentions(mentions || []);
+    } catch (error) {
+      console.error('Error loading keyword mentions:', error);
+    } finally {
+      setLoadingMentions(false);
+    }
+  };
+
+  const handleKeywordSelect = async (keyword: string) => {
+    setSelectedKeyword(keyword);
+    setShowKeywordSelector(false);
+    await loadKeywordMentions(keyword);
+    
+    // Add a system message about keyword selection
+    const systemMessage: Message = {
+      id: Date.now().toString(),
+      type: 'bot',
+      content: `Great! I've loaded the data for "${keyword}". I now have access to your recent Reddit mentions, sentiment analysis, and engagement metrics for this keyword. What would you like to know about your "${keyword}" brand performance?`,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, systemMessage]);
+  };
 
   const initializeChat = (key: string) => {
     try {
@@ -105,6 +209,8 @@ const AIChatbot: React.FC = () => {
             - Acknowledge when data interpretation may vary
             - If you don't have specific data, provide general best practices
             - Always consider both short-term and long-term brand impact
+            - When provided with Reddit data, analyze it thoroughly and provide specific insights
+            - Reference specific mentions, sentiment patterns, and engagement metrics when available
 
             **[EXPERTISE AREAS]**
             - Brand sentiment analysis and interpretation
@@ -129,6 +235,65 @@ const AIChatbot: React.FC = () => {
     } catch (error) {
       console.error('Error initializing chat:', error);
     }
+  };
+
+  const buildContextualPrompt = (userMessage: string): string => {
+    let contextualPrompt = userMessage;
+
+    if (selectedKeyword && keywordMentions.length > 0) {
+      // Build comprehensive context from Reddit data
+      const sentimentBreakdown = keywordMentions.reduce((acc, mention) => {
+        acc[mention.sentiment] = (acc[mention.sentiment] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const avgScore = keywordMentions.reduce((sum, mention) => sum + mention.score, 0) / keywordMentions.length;
+      const totalComments = keywordMentions.reduce((sum, mention) => sum + mention.num_comments, 0);
+      
+      const topSubreddits = keywordMentions.reduce((acc, mention) => {
+        if (mention.subreddit) {
+          acc[mention.subreddit] = (acc[mention.subreddit] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+
+      const sortedSubreddits = Object.entries(topSubreddits)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5);
+
+      // Sample recent mentions for analysis
+      const recentMentions = keywordMentions.slice(0, 10).map(mention => ({
+        content: mention.content.substring(0, 200) + (mention.content.length > 200 ? '...' : ''),
+        sentiment: mention.sentiment,
+        subreddit: mention.subreddit,
+        score: mention.score,
+        author: mention.author
+      }));
+
+      contextualPrompt = `
+**CONTEXT: Brand Analysis for "${selectedKeyword}"**
+
+**Current Data Overview:**
+- Total Recent Mentions: ${keywordMentions.length}
+- Sentiment Breakdown: ${Object.entries(sentimentBreakdown).map(([sentiment, count]) => `${sentiment}: ${count}`).join(', ')}
+- Average Engagement Score: ${avgScore.toFixed(1)}
+- Total Comments Generated: ${totalComments}
+- Top Subreddits: ${sortedSubreddits.map(([sub, count]) => `r/${sub} (${count})`).join(', ')}
+
+**Recent Mention Samples:**
+${recentMentions.map((mention, index) => `
+${index + 1}. [${mention.sentiment.toUpperCase()}] r/${mention.subreddit} (Score: ${mention.score})
+   Author: ${mention.author}
+   Content: "${mention.content}"
+`).join('')}
+
+**User Question:** ${userMessage}
+
+Please analyze this data and provide specific, actionable insights based on the actual Reddit mentions and engagement patterns shown above. Reference specific trends, sentiment patterns, and community behaviors you observe in the data.
+`;
+    }
+
+    return contextualPrompt;
   };
 
   const generateBotResponse = async (userMessage: string): Promise<void> => {
@@ -161,8 +326,11 @@ const AIChatbot: React.FC = () => {
       setMessages(prev => [...prev, streamingMessage]);
       streamingMessageRef.current = '';
 
+      // Build contextual prompt with Reddit data
+      const contextualPrompt = buildContextualPrompt(userMessage);
+
       // Send message and get streaming response
-      const result = await chatRef.current.sendMessageStream(userMessage);
+      const result = await chatRef.current.sendMessageStream(contextualPrompt);
       
       // Stream the response with word-by-word animation
       for await (const chunk of result.stream) {
@@ -176,7 +344,7 @@ const AIChatbot: React.FC = () => {
             : msg
         ));
 
-        // Add delay for streaming effect (adjust speed as needed)
+        // Add delay for streaming effect
         await new Promise(resolve => setTimeout(resolve, 30));
       }
 
@@ -211,35 +379,25 @@ const AIChatbot: React.FC = () => {
   const getFallbackResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
     
-    if (lowerMessage.includes('sentiment') || lowerMessage.includes('score')) {
-      return "Based on your current monitoring data, I can see your brand sentiment trends across all tracked keywords. Your positive sentiment ratio varies by keyword, with some showing strong performance while others may need attention. Would you like me to analyze specific keywords or time periods?";
+    if (lowerMessage.includes('keyword') && userKeywords.length > 0) {
+      return `I can see you have ${userKeywords.length} active keywords being monitored: ${userKeywords.map(k => k.keyword).join(', ')}. Please select a specific keyword using the keyword selector above so I can provide detailed analysis of your Reddit mentions and sentiment data.`;
     }
     
-    if (lowerMessage.includes('competitor') || lowerMessage.includes('competition')) {
-      return "I can help you understand your competitive position based on mention volume and sentiment analysis. While I don't have direct competitor data, I can analyze how your brand performs relative to industry benchmarks and suggest areas for improvement.";
+    if (lowerMessage.includes('sentiment') || lowerMessage.includes('score')) {
+      return selectedKeyword 
+        ? `Based on your "${selectedKeyword}" monitoring data, I can analyze sentiment trends across your tracked mentions. ${keywordMentions.length > 0 ? `You have ${keywordMentions.length} recent mentions to analyze.` : 'Please ensure you have recent mentions for this keyword.'}`
+        : "To provide sentiment analysis, please select a keyword first so I can access your specific mention data.";
     }
     
     if (lowerMessage.includes('improve') || lowerMessage.includes('recommendation')) {
-      return "Based on your mention analysis, here are some recommendations: 1) Monitor keywords showing negative sentiment trends more closely, 2) Engage with positive mentions to build community, 3) Set up additional keywords to capture more brand conversations. Would you like specific guidance on any of these areas?";
+      return selectedKeyword
+        ? `For your "${selectedKeyword}" keyword, I can provide specific recommendations based on your Reddit mention patterns and sentiment analysis. ${keywordMentions.length > 0 ? 'Let me analyze your recent mentions to suggest improvements.' : 'You may need more recent mentions to get detailed recommendations.'}`
+        : "To provide targeted recommendations, please select a keyword first so I can analyze your specific brand performance data.";
     }
     
-    if (lowerMessage.includes('keyword') || lowerMessage.includes('mention')) {
-      return "I can see your keyword monitoring setup and mention patterns. Each keyword has different sentiment distributions and mention volumes. Would you like me to analyze performance for specific keywords or suggest new ones to monitor?";
-    }
-    
-    if (lowerMessage.includes('reddit') || lowerMessage.includes('social')) {
-      return "Your Reddit monitoring is capturing mentions across various subreddits. I can help you understand which communities are most active in discussing your brand and suggest engagement strategies based on sentiment patterns.";
-    }
-    
-    if (lowerMessage.includes('dashboard') || lowerMessage.includes('data')) {
-      return "Your dashboard shows real-time data from your keyword monitoring system. I can help you interpret reputation scores, sentiment trends, and mention patterns. What specific metrics would you like me to explain?";
-    }
-    
-    if (lowerMessage.includes('alert') || lowerMessage.includes('notification')) {
-      return "I can help you understand when to pay attention to your mentions. Look for sudden spikes in negative sentiment, unusual mention volumes, or new keywords emerging in conversations about your brand.";
-    }
-    
-    return "I'm here to help you understand your brand monitoring data! I can assist with sentiment analysis, keyword performance, mention trends, and strategic recommendations. What specific aspect of your brand reputation would you like to explore?";
+    return userKeywords.length > 0 
+      ? `I'm here to help analyze your brand performance! You have ${userKeywords.length} keywords being monitored. Please select a keyword using the selector above, and I'll provide detailed insights based on your Reddit mentions and sentiment data.`
+      : "I'm here to help with brand analysis! It looks like you don't have any keywords set up for monitoring yet. You can add keywords in the Settings page to start tracking your brand mentions.";
   };
 
   const handleSendMessage = async () => {
@@ -268,10 +426,10 @@ const AIChatbot: React.FC = () => {
   };
 
   const quickActions = [
-    "How is my brand performing?",
-    "What should I improve?",
-    "Analyze my competitors",
-    "Show keyword insights"
+    "Analyze sentiment trends",
+    "Show top performing posts",
+    "Identify engagement opportunities",
+    "Compare keyword performance"
   ];
 
   const handleQuickAction = (action: string) => {
@@ -342,6 +500,70 @@ const AIChatbot: React.FC = () => {
 
       {!isMinimized && (
         <>
+          {/* Keyword Selector */}
+          {userKeywords.length > 0 && (
+            <div className="px-4 sm:px-6 pt-4 flex-shrink-0">
+              <div className="relative">
+                <button
+                  onClick={() => setShowKeywordSelector(!showKeywordSelector)}
+                  className="w-full flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200 border border-gray-200 dark:border-gray-600"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Hash className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {selectedKeyword ? `Selected: ${selectedKeyword}` : 'Select a keyword for analysis'}
+                    </span>
+                    {selectedKeyword && keywordMentions.length > 0 && (
+                      <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 py-1 rounded-full">
+                        {keywordMentions.length} mentions loaded
+                      </span>
+                    )}
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${showKeywordSelector ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showKeywordSelector && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
+                    {userKeywords.map((keyword) => (
+                      <button
+                        key={keyword.id}
+                        onClick={() => handleKeywordSelect(keyword.keyword)}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white">{keyword.keyword}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {keyword.total_mentions_found} mentions • {keyword.last_searched_at ? new Date(keyword.last_searched_at).toLocaleDateString() : 'Never searched'}
+                            </div>
+                          </div>
+                          {selectedKeyword === keyword.keyword && (
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Loading indicator for mentions */}
+          {loadingMentions && (
+            <div className="px-4 sm:px-6 pt-2 flex-shrink-0">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="boxes-small">
+                  <div className="box"></div>
+                  <div className="box"></div>
+                  <div className="box"></div>
+                  <div className="box"></div>
+                </div>
+                <span>Loading Reddit data for {selectedKeyword}...</span>
+              </div>
+            </div>
+          )}
+
           {/* Messages Container */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-0">
             {messages.map((message) => (
@@ -421,7 +643,7 @@ const AIChatbot: React.FC = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask about your brand performance..."
+                placeholder={selectedKeyword ? `Ask about "${selectedKeyword}" performance...` : "Ask about your brand performance..."}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
                 disabled={isTyping}
               />
