@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, Bot, User, Minimize2, Maximize2, Hash, ChevronDown } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '../lib/supabase';
-import StreamingText from './StreamingText';
 import MarkdownRenderer from './MarkdownRenderer';
 
 interface Message {
@@ -65,26 +64,41 @@ const AIChatbot: React.FC = () => {
   const chatRef = useRef<any>(null);
   const streamingMessageRef = useRef<string>('');
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [userScrolledUp, setUserScrolledUp] = useState(false);
+  const [userHasScrolled, setUserHasScrolled] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
-  // Handle scroll detection to prevent forced scrolling
+  // Improved scroll detection
   const handleScroll = () => {
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-      setUserScrolledUp(!isAtBottom);
+      const threshold = 100; // pixels from bottom
+      const atBottom = scrollHeight - scrollTop - clientHeight < threshold;
+      
+      setIsAtBottom(atBottom);
+      
+      // Only set userHasScrolled if they scroll up significantly
+      if (!atBottom && scrollHeight - scrollTop - clientHeight > threshold) {
+        setUserHasScrolled(true);
+      } else if (atBottom) {
+        setUserHasScrolled(false);
+      }
     }
   };
 
   const scrollToBottom = () => {
-    // Only auto-scroll if user hasn't manually scrolled up
-    if (!userScrolledUp && messagesEndRef.current) {
+    // Only auto-scroll if user is at bottom or hasn't manually scrolled
+    if (messagesEndRef.current && (isAtBottom || !userHasScrolled)) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Small delay to ensure DOM is updated
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 50);
+    
+    return () => clearTimeout(timer);
   }, [messages]);
 
   // Load user's saved API key and keywords on component mount
@@ -609,15 +623,7 @@ Please analyze this data and provide specific, actionable insights based on the 
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}>
                     {message.type === 'bot' ? (
-                      message.isStreaming ? (
-                        <StreamingText 
-                          text={message.content} 
-                          speed={25}
-                          className="w-full"
-                        />
-                      ) : (
-                        <MarkdownRenderer content={message.content} />
-                      )
+                      <MarkdownRenderer content={message.content} />
                     ) : (
                       <div>{message.content}</div>
                     )}
