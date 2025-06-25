@@ -1,11 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, Bot, User, Minimize2, Maximize2 } from 'lucide-react';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { supabase } from '../lib/supabase';
 
 interface Message {
   id: string;
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
+  isStreaming?: boolean;
+}
+
+interface ChatHistory {
+  role: 'user' | 'model';
+  parts: { text: string }[];
 }
 
 const AIChatbot: React.FC = () => {
@@ -20,8 +28,12 @@ const AIChatbot: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [loadingApiKey, setLoadingApiKey] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const chatRef = useRef<any>(null);
+  const streamingMessageRef = useRef<string>('');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,7 +43,172 @@ const AIChatbot: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const generateBotResponse = (userMessage: string): string => {
+  // Load user's saved API key on component mount
+  useEffect(() => {
+    const loadSavedApiKey = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          setLoadingApiKey(false);
+          return;
+        }
+
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-gemini-key`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.hasKey && data.apiKey && data.status === 'valid') {
+            setApiKey(data.apiKey);
+            initializeChat(data.apiKey);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved API key:', error);
+      } finally {
+        setLoadingApiKey(false);
+      }
+    };
+
+    loadSavedApiKey();
+  }, []);
+
+  const initializeChat = (key: string) => {
+    try {
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+
+      const chatHistory: ChatHistory[] = [
+        {
+          role: "user",
+          parts: [{ text: `
+            **[ROLE & GOAL]**
+            You are BrandSage, an exceptionally knowledgeable and passionate AI expert on brand reputation management and social media analytics. Your primary goal is to be the ultimate companion for brand managers, marketers, and business owners looking to understand and improve their online presence. Your purpose is to enrich their understanding of brand sentiment, reputation management, and social media strategy.
+
+            **[PERSONA & TONE]**
+            - Professional & Insightful
+            - Data-driven but approachable
+            - Strategic thinking with practical advice
+            - Encouraging and constructive
+            - Use marketing and analytics terminology naturally
+
+            **[INTERACTION GUIDELINES & CONSTRAINTS]**
+            - Ask clarifying questions for better recommendations
+            - Use formatting (bold, lists) for clarity
+            - Focus on actionable insights and strategies
+            - Acknowledge when data interpretation may vary
+            - If you don't have specific data, provide general best practices
+            - Always consider both short-term and long-term brand impact
+
+            **[EXPERTISE AREAS]**
+            - Brand sentiment analysis and interpretation
+            - Social media reputation management
+            - Reddit community engagement strategies
+            - Crisis communication and damage control
+            - Competitive analysis and benchmarking
+            - Content strategy for brand building
+            - Influencer and community relations
+            - Data-driven decision making for brands
+          `}],
+        },
+        {
+          role: "model",
+          parts: [{ text: "Hello! I'm BrandSage, your AI expert for brand reputation and social media analytics. I'm here to help you understand your brand's online presence, interpret sentiment data, and develop strategies to enhance your reputation. What aspect of your brand performance would you like to explore today?" }],
+        },
+      ];
+
+      chatRef.current = model.startChat({
+        history: chatHistory,
+      });
+    } catch (error) {
+      console.error('Error initializing chat:', error);
+    }
+  };
+
+  const generateBotResponse = async (userMessage: string): Promise<void> => {
+    if (!apiKey || !chatRef.current) {
+      // Fallback to static responses if no API key
+      const fallbackResponse = getFallbackResponse(userMessage);
+      
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: fallbackResponse,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, botResponse]);
+      return;
+    }
+
+    try {
+      // Add a placeholder message for streaming
+      const streamingMessageId = (Date.now() + 1).toString();
+      const streamingMessage: Message = {
+        id: streamingMessageId,
+        type: 'bot',
+        content: '',
+        timestamp: new Date(),
+        isStreaming: true
+      };
+
+      setMessages(prev => [...prev, streamingMessage]);
+      streamingMessageRef.current = '';
+
+      // Send message and get streaming response
+      const result = await chatRef.current.sendMessageStream(userMessage);
+      
+      // Stream the response with word-by-word animation
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        streamingMessageRef.current += chunkText;
+        
+        // Update the streaming message with accumulated text
+        setMessages(prev => prev.map(msg => 
+          msg.id === streamingMessageId 
+            ? { ...msg, content: streamingMessageRef.current }
+            : msg
+        ));
+
+        // Add delay for streaming effect (adjust speed as needed)
+        await new Promise(resolve => setTimeout(resolve, 30));
+      }
+
+      // Mark streaming as complete
+      setMessages(prev => prev.map(msg => 
+        msg.id === streamingMessageId 
+          ? { ...msg, isStreaming: false }
+          : msg
+      ));
+
+    } catch (error) {
+      console.error('Error generating response:', error);
+      
+      // Fallback to static response on error
+      const fallbackResponse = "I apologize, but I'm having trouble connecting to my AI service right now. Please try again in a moment, or check that your Gemini API key is properly configured in Settings.";
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: fallbackResponse,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => {
+        // Remove the streaming message and add error message
+        const filtered = prev.filter(msg => !msg.isStreaming);
+        return [...filtered, errorMessage];
+      });
+    }
+  };
+
+  const getFallbackResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
     
     if (lowerMessage.includes('sentiment') || lowerMessage.includes('score')) {
@@ -79,18 +256,8 @@ const AIChatbot: React.FC = () => {
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: generateBotResponse(inputValue),
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1000 + Math.random() * 2000);
+    await generateBotResponse(inputValue);
+    setIsTyping(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -112,6 +279,42 @@ const AIChatbot: React.FC = () => {
     inputRef.current?.focus();
   };
 
+  if (loadingApiKey) {
+    return (
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg h-[500px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="boxes mb-4">
+            <div className="box"></div>
+            <div className="box"></div>
+            <div className="box"></div>
+            <div className="box"></div>
+          </div>
+          <p className="text-gray-600 dark:text-gray-300">Loading AI assistant...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!apiKey) {
+    return (
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg h-[500px] flex items-center justify-center">
+        <div className="text-center p-8">
+          <Bot className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">AI Assistant Unavailable</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
+            To use the AI assistant, please configure your Gemini API key in Settings.
+          </p>
+          <button
+            onClick={() => window.location.href = '/settings'}
+            className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105"
+          >
+            Go to Settings
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg transition-all duration-300 ${isMinimized ? 'h-20' : 'h-[500px]'} flex flex-col`}>
       {/* Header */}
@@ -121,8 +324,8 @@ const AIChatbot: React.FC = () => {
             <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">AI Brand Assistant</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Ask me anything about your brand</p>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">BrandSage AI</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Your brand reputation expert</p>
           </div>
         </div>
         <button
@@ -163,7 +366,12 @@ const AIChatbot: React.FC = () => {
                       ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}>
-                    {message.content}
+                    <div className={`${message.isStreaming ? 'streaming-text' : ''}`}>
+                      {message.content}
+                    </div>
+                    {message.isStreaming && (
+                      <span className="inline-block w-2 h-4 bg-current opacity-75 animate-pulse ml-1"></span>
+                    )}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -204,7 +412,7 @@ const AIChatbot: React.FC = () => {
             </div>
           </div>
 
-          {/* Input Section - Now integrated within the card */}
+          {/* Input Section */}
           <div className="p-4 sm:p-6 border-t border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
             <div className="flex space-x-3">
               <input
