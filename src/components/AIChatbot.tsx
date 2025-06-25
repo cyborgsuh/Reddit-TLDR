@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, Bot, User, Minimize2, Maximize2, Hash, ChevronDown } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '../lib/supabase';
+import StreamingText from './StreamingText';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface Message {
   id: string;
@@ -62,9 +64,23 @@ const AIChatbot: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const chatRef = useRef<any>(null);
   const streamingMessageRef = useRef<string>('');
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
+
+  // Handle scroll detection to prevent forced scrolling
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      setUserScrolledUp(!isAtBottom);
+    }
+  };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only auto-scroll if user hasn't manually scrolled up
+    if (!userScrolledUp && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -474,7 +490,7 @@ Please analyze this data and provide specific, actionable insights based on the 
   }
 
   return (
-    <div className={`bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg transition-all duration-300 ${isMinimized ? 'h-20' : 'h-[500px]'} flex flex-col`}>
+    <div className={`bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg transition-all duration-300 ${isMinimized ? 'h-20' : 'h-[500px]'} flex flex-col w-full`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
         <div className="flex items-center space-x-3">
@@ -565,11 +581,15 @@ Please analyze this data and provide specific, actionable insights based on the 
           )}
 
           {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-0">
+          <div 
+            ref={messagesContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-0"
+          >
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex items-start space-x-3 ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}
+                className={`flex items-start space-x-3 w-full ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}
               >
                 <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                   message.type === 'user' 
@@ -582,17 +602,24 @@ Please analyze this data and provide specific, actionable insights based on the 
                     <Bot className="h-4 w-4 text-white" />
                   )}
                 </div>
-                <div className={`flex-1 max-w-xs lg:max-w-md ${message.type === 'user' ? 'text-right' : ''}`}>
-                  <div className={`inline-block p-3 rounded-2xl text-sm leading-relaxed ${
+                <div className={`flex-1 w-full ${message.type === 'user' ? 'text-right' : ''}`}>
+                  <div className={`inline-block p-3 rounded-2xl text-sm leading-relaxed max-w-full ${
                     message.type === 'user'
                       ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}>
-                    <div className={`${message.isStreaming ? 'streaming-text' : ''}`}>
-                      {message.content}
-                    </div>
-                    {message.isStreaming && (
-                      <span className="inline-block w-2 h-4 bg-current opacity-75 animate-pulse ml-1"></span>
+                    {message.type === 'bot' ? (
+                      message.isStreaming ? (
+                        <StreamingText 
+                          text={message.content} 
+                          speed={25}
+                          className="w-full"
+                        />
+                      ) : (
+                        <MarkdownRenderer content={message.content} />
+                      )
+                    ) : (
+                      <div>{message.content}</div>
                     )}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
