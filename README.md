@@ -1,109 +1,112 @@
 # 🚀 Reddit TLDR
 
-> ### AI-powered insights from Reddit discussions
+> **AI-powered Reddit Insights & Summarization Platform**
 
-Reddit TLDR is a powerful web application that leverages Google's Gemini AI to analyze and summarize discussions from Reddit. Instead of manually sifting through hundreds of comments to gauge public opinion, this tool automates the process, providing you with a clear, concise overview of sentiment and key talking points on any given topic.
-
----
-
-## ✨ Key Features
-
-*   **🎯 Targeted Reddit Analysis:** Search for any term to pull relevant posts.
-*   **🧠 Powered by Gemini AI:** Utilizes Google's state-of-the-art AI for nuanced sentiment analysis and summarization.
-*   **📊 At-a-Glance Results:** Each post is tagged with a sentiment: `Positive`, `Negative`, `Mixed`, or `Neutral`.
-*   **🔬 Detailed Post Drill-Down:** View top comments and a bulleted list of positive/negative aspects for any individual post.
-*   **📋 Comprehensive Summary:** Get a high-level dashboard with sentiment distribution and aggregated key insights.
-*   **⏱️ Performance Metrics:** See exactly how long the data retrieval and AI processing took.
+Reddit TLDR is a full-stack web application that leverages Google's Gemini AI to analyze, summarize, and visualize sentiment from Reddit discussions. Designed for researchers, marketers, and curious users, it transforms complex Reddit threads into actionable insights—saving you hours of manual reading and analysis.
 
 ---
 
-## 🛠️ Getting Started
+## 🌟 Features
 
-To get a local copy up and running, follow these simple steps.
-
-### Prerequisites
-
-You will need the following software installed on your machine:
-*   **Node.js** (v18 or higher is recommended)
-*   **npm** (which comes bundled with Node.js)
-*   A **Google Gemini API Key**. You can get one for free from [Google AI Studio](https://aistudio.google.com/app/apikey).
-
-### Installation
-
-1.  **Clone the repository:**
-    ```bash
-    https://github.com/Mustafa-Almitamy/Reddit-TLDR.git
-    ```
-
-2.  **Navigate to the project directory:**
-    ```bash
-    cd reddit-tldr
-    ```
-
-3.  **Install NPM packages:**
-    ```bash
-    npm install
-    ```
-
-4.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
-
-Once the server is running, open your browser and navigate to `http://localhost:5173` (or the address shown in your terminal) to see the application.
+- **🔍 Smart Reddit Search:** Instantly search any topic or keyword and fetch relevant Reddit posts and comments.
+- **🤖 Gemini AI Summarization:** Uses Google Gemini AI for advanced sentiment analysis and concise, human-like summaries.
+- **📈 Visual Sentiment Dashboard:** Interactive charts and cards show sentiment distribution and key talking points at a glance.
+- **📝 Drill-Down Analysis:** Expand any post to see top comments and AI-generated lists of positive/negative aspects.
+- **🔑 Secure API Key Management:** Store your Gemini API key securely with encryption and manage it from your settings.
+- **🗝️ User Authentication:** Sign up, log in, and manage your account securely. OAuth with Reddit for higher API limits.
+- **⚙️ Customizable Preferences:** Set default models, post counts, and save frequently used keywords.
+- **🛡️ Account & Security Tools:** Change password, manage API keys, and access a Danger Zone for account deletion.
+- **🕵️‍♂️ Keyword Monitoring:** Automatically track keywords on Reddit and get notified of new mentions.
+- **🌗 Dark Mode:** Beautiful, responsive UI with full dark mode support.
 
 ---
 
-##  walkthrough How It Works: A Visual Guide
+## 🌐 Try It Live
 
-Here is a step-by-step walkthrough of the user journey from search to summary.
-
-### **Step 1: Configure Your Analysis**
-
-Start by entering your search term and providing your Google AI Studio API key. You can also adjust advanced settings like the number of posts to analyze, which gives you an estimated processing time.
-
-![Form](/images/Form.png "Form")
-
-
-### **Step 2: Select Your AI Model**
-
-Choose the Gemini model that best fits your needs for performance and quality. The recommended model is highlighted for convenience.
-
-![Fill](/images/Fill.png "Fill")
-
-
-
-### **Step 3: View the Initial Analysis Results**
-
-After clicking "Analyze Sentiment," the app fetches Reddit posts and presents them in a list. Each post is tagged with its overall sentiment (e.g., `Negative`, `Mixed`), allowing you to quickly identify trends.
-
-![Cards](/images/Cards.png "Cards")
-
-
-
-### **Step 4: Drill Down for Deeper Insights**
-
-Click on any post to expand it. Here you can see the top comments from the thread and a concise, AI-generated summary of the key negative (or positive) aspects discussed.
-
-![Drill](/images/Drill.png "Drill")
-
-
-### **Step 5: Review the Final Summary Dashboard**
-
-At the bottom of the results, a full **Analysis Summary** provides a holistic view. It includes:
-*   **Sentiment Distribution:** A visual breakdown of the overall sentiment.
-*   **Key Insights:** Aggregated positive and negative points from all discussions.
-*   **Performance Metrics:** A transparent look at the analysis speed.
-  
-![Summary](/images/Summary.png "Summary")
-
-
+> **The easiest way to experience Reddit TLDR is to use the live demo:**
+>
+> 👉 [https://reddit-tldr.netlify.app/](https://reddit-tldr.netlify.app/)
+>
+> No local setup required. Just sign up and start exploring Reddit insights instantly!
 
 ---
 
-## 🔮 Future Roadmap
+## 📦 Tech Stack & Architecture
 
-This project is currently in a demonstration phase to showcase its core functionality.
+- **Frontend:** React + TypeScript, Tailwind CSS, Vite
+- **Backend:** Supabase (Postgres, Auth, Edge Functions)
+- **AI:** Google Gemini API (via user-provided key)
+- **Deployment:** Netlify (serverless functions for Reddit API proxy)
+- **Other:** React Router, Lucide Icons, custom hooks & context
 
-> **📌 Important Note:**
-> The app will go live once authentication, data storage, analytics, and other important features are implemented. Future plans include user accounts for saving API keys, storing analysis history, and potentially sharing public report pages.
+---
+
+## 🖥️ Usage Guide
+
+1. **Sign Up & Log In:** Create an account or log in. Connect your Reddit account for enhanced features.
+2. **Configure Analysis:** Enter a search term, select your AI model, and set the number of posts to analyze.
+3. **Run Analysis:** Click "Analyze Sentiment" to fetch and process Reddit data.
+4. **Explore Results:** View sentiment tags, expand posts for details, and review the summary dashboard.
+5. **Manage Settings:** Go to the Settings page to manage your API key, preferences, keywords, and account.
+6. **Monitor Keywords:** Set up keyword monitoring to track new Reddit mentions automatically.
+
+---
+
+## 🛡️ Security & Privacy
+- **API Keys** are encrypted and never shared.
+- **User Data** is stored securely in Supabase.
+- **OAuth** with Reddit is used for higher API rate limits and privacy.
+
+---
+
+## 🛠️ Project Structure
+
+```
+Reddit-TLDR/
+├── src/
+│   ├── components/         # Reusable UI components
+│   ├── pages/              # Main app pages (Dashboard, Settings, etc.)
+│   ├── hooks/              # Custom React hooks
+│   ├── contexts/           # React context providers
+│   ├── lib/                # Supabase and utility libraries
+│   └── utils/              # Helper functions
+├── public/                 # Static assets
+├── netlify/functions/      # Serverless backend functions
+├── supabase/               # Database and edge function code
+├── images/                 # App screenshots and illustrations
+├── package.json            # Project metadata and scripts
+└── README.md               # Project documentation
+```
+
+---
+
+## 📸 Screenshots
+
+- **Form & Model Selection:**
+  ![Form](/images/Form.png)
+  ![Fill](/images/Fill.png)
+- **Results & Drill-Down:**
+  ![Cards](/images/Cards.png)
+  ![Drill](/images/Drill.png)
+- **Summary Dashboard:**
+  ![Summary](/images/Summary.png)
+
+---
+
+## 🚀 Roadmap & Contributions
+
+- [ ] Public report sharing
+- [ ] Email notifications for keyword monitoring
+- [ ] More AI models and analytics
+- [ ] Community features
+
+**Contributions are welcome!** Please open issues or pull requests for suggestions and improvements.
+
+---
+
+## 👤 Credits
+
+- **AI:** Google Gemini
+- **Backend:** Supabase
+- **UI:** Tailwind CSS, Lucide Icons
+
